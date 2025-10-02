@@ -28,7 +28,7 @@ classDiagram
         - base_url: str
         + get_vacancies(query: str, per_page: int) -> VacancyList
     }
-    
+
     class HHClient {
         - base_url: str
         + get_vacancies(query: str, per_page: int) -> VacancyList
@@ -68,11 +68,11 @@ classDiagram
         + update(vacancy: Vacancy) -> None
         + delete(vacancy_id: str) -> None
     }
-
-    HHClient --|> BaseVacancyAPI : наследуется от
-    HHClient --> VacancyList : возвращает
-    VacancyList --> Vacancy : содержит
-    JSONStorage --|> BaseStorage : наследуется от
+        
+    HHClient --|> BaseVacancyAPI: наследуется от
+    HHClient --> VacancyList: возвращает
+    VacancyList --> Vacancy: содержит
+    JSONStorage --|> BaseStorage: наследуется от
 
 
 
@@ -84,3 +84,14 @@ https://api.hh.ru/openapi/redoc#tag/Poisk-vakansij/operation/get-vacancies
 
 2. Описание Дерево всех регионов
 https://api.hh.ru/openapi/redoc#tag/Obshie-spravochniki/operation/get-areas
+
+
+# Todo
+
+- [x] Спроектировать структуру проекта
+- [x] Спроектировать классы
+- [x] Сделать класс HHClient
+- [x] Сделать классы с моделями
+- [x] Сделать парсинг ответа от HH в модель Vacancy
+- [x] Наполнить VacancyList объектами Vacancy
+
