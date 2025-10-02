@@ -2,69 +2,79 @@
 ```
 src/
 ├── main.py            # точка входа в программу
-├── vacancy_api.py     # классы: BaseVacancyAPI, HHClient
-├── models.py          # классы: Vacancy, VacancyList
-├── storage.py         # классы: BaseStorage, JSONStorage
-├── services.py        # функции фильтрации, сортировки, топ N
-└── cli.py             # взаимодействие с пользователем (консоль)
+├── vacancy_api.py     # BaseVacancyAPI, HHClient
+├── models.py          # Vacancy, VacancyList
+├── storage.py         # BaseStorage (CRUD), JSONStorage
+└── cli.py             # интерфейс пользователя (консоль)
 
 tests/
 ├── test_client.py
 ├── test_models.py
 ├── test_storage.py
-└── test_services.py
+└── test_cli.py
 
 logs/
 ├── main.log
-└── test_services.py
+└── vacancy_api.log
+
 ```
 # Диаграмма классов
 
 ```mermaid
 
 classDiagram
+    class BaseVacancyAPI {
+        <<abstract>>
+        - base_url: str
+        + get_vacancies(query: str, per_page: int) -> VacancyList
+    }
+    
     class HHClient {
         - base_url: str
-        + get_vacancies(query: str, per_page: int) List~Vacancy~
+        + get_vacancies(query: str, per_page: int) -> VacancyList
     }
 
     class Vacancy {
         + id: str
         + title: str
         + company: str
-        + salary: float?
+        + salary: float
         + url: str
+        + to_dict() dict
     }
 
     class VacancyList {
-        - vacancies: List[Vacancy]
-        + add(v: Vacancy) void
+        # vacancies: List[Vacancy]
+        + add(v: Vacancy) -> None
         + filter_by_salary(min: float, max: float) -> VacancyList
-        + top_n(n: int) VacancyList
+        + top_n(n: int) -> VacancyList
         + __iter__()
     }
 
     class BaseStorage {
         <<abstract>>
-        + save(data: Any, path: str) void
-        + load(path: str) Any
+        + create(vacancy: Vacancy) -> None
+        + read_all() -> VacancyList
+        + read(criteria: dict) -> VacancyList
+        + update(vacancy: Vacancy) -> None
+        + delete(vacancy_id: str) -> None
     }
 
     class JSONStorage {
-        + save(data: Any, path: str) void
-        + load(path: str) Any
+        - filename: str
+        + create(vacancy: Vacancy) -> None
+        + read_all() -> VacancyList
+        + read(criteria: dict) -> VacancyList
+        + update(vacancy: Vacancy) -> None
+        + delete(vacancy_id: str) -> None
     }
 
-    class Service {
-        + filter_vacancies(vacancies: VacancyList, keyword: str) VacancyList
-        + sort_vacancies(vacancies: VacancyList, by: str) VacancyList
-        + get_top_n(vacancies: VacancyList, n: int) VacancyList
-    }
+    HHClient --|> BaseVacancyAPI : наследуется от
+    HHClient --> VacancyList : возвращает
+    VacancyList --> Vacancy : содержит
+    JSONStorage --|> BaseStorage : наследуется от
 
-    HHClient --> VacancyList : "возвращает"
-    VacancyList --> Vacancy : "содержит *"
-    JSONStorage --|> BaseStorage
-    Service --> VacancyList : "работает с"
+
 
 ```
 # Справочная информация по API HH
