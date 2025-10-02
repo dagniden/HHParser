@@ -26,7 +26,7 @@ class HHClient(BaseVacancyAPI):
     BASE_URL = "https://api.hh.ru"
 
     def get_vacancies(self, text: str, area: int = 1, per_page: int = 5) -> VacancyList:
-        """ Публичный метод. Получает список вакансий по ключевому слову. """
+        """Публичный метод. Получает список вакансий по ключевому слову."""
         params = {"text": text, "area": area, "per_page": per_page}  # 1 — Москва
 
         data = self.__make_request("/vacancies", params).get("items", [])
@@ -43,7 +43,7 @@ class HHClient(BaseVacancyAPI):
         return data
 
     def __make_request(self, endpoint: str, params: dict = {}) -> dict:
-        """ Приватный метод. Инкапсулирует логику обращения к API HeadHunter. """
+        """Приватный метод. Инкапсулирует логику обращения к API HeadHunter."""
         url = f"{self.BASE_URL}{endpoint}"
         response = requests.get(url, params=params)
 
@@ -55,15 +55,29 @@ class HHClient(BaseVacancyAPI):
     @staticmethod
     def __parse_vacancy(data: dict) -> Vacancy:
         logger.debug(f"Добавление новой вакансии в VacancyList: {data}")
-        vacancy = Vacancy(vacancy_id=data.get("id"),
-                          vacancy_url=data.get("url"),
-                          title=data.get("title"),
-                          description=f'{(data.get("snippet") or {}).get("responsibility")} {(data.get("schedule") or {}).get("name")}.',
-                          company_name=(data.get("employer") or {}).get("name"),
-                          area_name=(data.get("area") or {}).get("name"),
-                          salary_from=(data.get("salary") or {}).get("from"),
-                          salary_to=(data.get("salary") or {}).get("to")
-                          )
+
+        vacancy_id = data.get("id")
+        vacancy_url = data.get("url")
+        title = data.get("title")
+        company_name = (data.get("employer") or {}).get("name")
+        area_name = (data.get("area") or {}).get("name")
+        salary_from = (data.get("salary") or {}).get("from")
+        salary_to = (data.get("salary") or {}).get("to")
+
+        responsibility = (data.get("snippet") or {}).get("responsibility")
+        schedule = (data.get("schedule") or {}).get("name")
+        description = f'{responsibility} {schedule}.'
+
+        vacancy = Vacancy(
+            vacancy_id,
+            vacancy_url,
+            title,
+            description,
+            company_name,
+            area_name,
+            salary_from,
+            salary_to
+        )
 
         logger.debug(f"Добавлена Vacancy: {vacancy}")
         return vacancy

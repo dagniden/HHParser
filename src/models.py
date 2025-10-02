@@ -1,8 +1,18 @@
 class Vacancy:
     """Класс для представления вакансии"""
-    __slots__ = ("vacancy_id", "vacancy_url", "title", "description", "company_name", "area_name", "salary_from", "salary_to")
 
-    def __init__(self, vacancy_id, vacancy_url, title, description, company_name, area_name, salary_from, salary_to) :
+    __slots__ = (
+        "vacancy_id",
+        "vacancy_url",
+        "title",
+        "description",
+        "company_name",
+        "area_name",
+        "salary_from",
+        "salary_to",
+    )
+
+    def __init__(self, vacancy_id, vacancy_url, title, description, company_name, area_name, salary_from, salary_to):
         self.vacancy_id = vacancy_id
         self.vacancy_url = vacancy_url
         self.title = title
