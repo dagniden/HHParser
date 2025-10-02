@@ -94,4 +94,6 @@ https://api.hh.ru/openapi/redoc#tag/Obshie-spravochniki/operation/get-areas
 - [x] Сделать классы с моделями
 - [x] Сделать парсинг ответа от HH в модель Vacancy
 - [x] Наполнить VacancyList объектами Vacancy
+- [ ] Добавить модель Region
+- [ ] Добавить список регионов в HHClient и его наполнение методом get_areas
 

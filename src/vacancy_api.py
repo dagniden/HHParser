@@ -25,9 +25,14 @@ class BaseVacancyAPI(ABC):
 class HHClient(BaseVacancyAPI):
     BASE_URL = "https://api.hh.ru"
 
-    def get_vacancies(self, text: str, area: int = 1, per_page: int = 5) -> VacancyList:
+    def __init__(self, text: str, area: int = 1, per_page: int = 5):
+        self.text = text
+        self.area = area
+        self.per_page = per_page
+
+    def get_vacancies(self) -> VacancyList:
         """Публичный метод. Получает список вакансий по ключевому слову."""
-        params = {"text": text, "area": area, "per_page": per_page}  # 1 — Москва
+        params = {"text": self.text, "area": self.area, "per_page": self.per_page}
 
         data = self.__make_request("/vacancies", params).get("items", [])
 
