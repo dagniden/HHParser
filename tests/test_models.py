@@ -9,5 +9,14 @@ def test_vacancy_valid() -> None:
     assert vacancy1.description == "Тестировать приложения лопатой"
 
 
-def test_vacancy_str(test_vacancy: Vacancy) -> None:
-    print(test_vacancy)
+def test_vacancy_str(vacancy: Vacancy) -> None:
+    assert str(vacancy) == "{'salary_from': 200, 'salary_to': 300, 'title': 'Тестировщик', 'description': 'Тестировать приложения лопатой'}"
+    assert repr(vacancy) == "{'salary_from': 200, 'salary_to': 300, 'title': 'Тестировщик', 'description': 'Тестировать приложения лопатой'}"
+
+
+def test_vacancy_list(vacancy: Vacancy) -> None:
+    vacancy_list = VacancyList([vacancy])
+    assert vacancy_list.vacancies == [vacancy]
+
+    vacancy_list.add(vacancy)
+    assert vacancy_list.vacancies == [vacancy, vacancy]
