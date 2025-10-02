@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 import requests
 from loguru import logger
 
-from src.vacancies import Vacancy
+from src.models import Vacancy
 
 # Конфигурация логгера
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,14 +22,12 @@ class BaseVacancyAPI(ABC):
         pass
 
 
+
 class HHClient(BaseVacancyAPI):
     BASE_URL = "https://api.hh.ru"
 
     def get_vacancies(self, text: str, area: int = 1, per_page: int = 5) -> dict:
-        """
-        Публичный метод.
-        Получает список вакансий по ключевому слову.
-        """
+        """ Публичный метод. Получает список вакансий по ключевому слову. """
         params = {"text": text, "area": area, "per_page": per_page}  # 1 — Москва
 
         data = self.__make_request("/vacancies", params).get("items", [])
@@ -48,10 +46,7 @@ class HHClient(BaseVacancyAPI):
         return data
 
     def __make_request(self, endpoint: str, params: dict = {}) -> dict:
-        """
-        Приватный метод.
-        Инкапсулирует логику обращения к API HeadHunter.
-        """
+        """ Приватный метод. Инкапсулирует логику обращения к API HeadHunter. """
         url = f"{self.BASE_URL}{endpoint}"
         response = requests.get(url, params=params)
 

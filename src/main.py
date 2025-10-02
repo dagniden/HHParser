@@ -2,7 +2,7 @@ import os
 
 from loguru import logger
 
-from src.headhunterapi import HHClient
+from src.vacancy_api import HHClient
 
 # Конфигурация логгера
 current_dir = os.path.dirname(os.path.abspath(__file__))
