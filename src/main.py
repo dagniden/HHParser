@@ -12,11 +12,13 @@ log_file = os.path.join(log_dir, "main.log")
 logger.add(sink=log_file, level="DEBUG")
 
 
-if __name__ == "__main__":
-
-    hh = HHClient()
-
-    vacancies_list = hh.get_vacancies("разрабочтик")
+def main():
+    hh = HHClient(text="Разработчик")
+    vacancies_list = hh.get_vacancies()
     logger.debug(f"Получено вакансий количество: {len(vacancies_list)}")
 
     hh.get_areas()
+
+
+if __name__ == "__main__":
+    main()

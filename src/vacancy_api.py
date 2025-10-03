@@ -10,7 +10,7 @@ from src.models import Vacancy, VacancyList
 current_dir = os.path.dirname(os.path.abspath(__file__))
 log_dir = os.path.join(current_dir, "..", "logs")
 os.makedirs(log_dir, exist_ok=True)
-log_file = os.path.join(log_dir, "headhunterapi.log")
+log_file = os.path.join(log_dir, "vacancy_api.log")
 logger.add(sink=log_file, level="DEBUG")
 
 
@@ -32,7 +32,10 @@ class HHClient(BaseVacancyAPI):
 
     def get_vacancies(self) -> VacancyList:
         """Публичный метод. Получает список вакансий по ключевому слову."""
-        params = {"text": self.text, "area": self.area, "per_page": self.per_page}
+        params = {"text": self.text,
+                  "area": self.area,
+                  "per_page": self.per_page,
+                  "search_field": ["name", "description"]}
 
         data = self.__make_request("/vacancies", params).get("items", [])
 
