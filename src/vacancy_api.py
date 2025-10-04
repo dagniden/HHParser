@@ -1,5 +1,4 @@
 import os
-import timeit
 from abc import ABC, abstractmethod
 from functools import cache
 
@@ -17,25 +16,30 @@ logger.add(sink=log_file, level="DEBUG")
 
 
 class BaseVacancyAPI(ABC):
+    """Базовый абстрактный класс для API вакансий."""
+
     BASE_URL: str
 
     @abstractmethod
     def fetch_vacancies(self, search_string: str, region: int) -> VacancyList:
+        """Получает список вакансий по поисковой строке и региону."""
         pass
 
 
 class HHClient(BaseVacancyAPI):
+    """Клиент для работы с API HeadHunter."""
+
     BASE_URL = "https://api.hh.ru"
     region_names = {}
 
     def __init__(self):
+        """Инициализирует клиент и загружает справочник регионов."""
         if not self.region_names:
-
-            elapsed_time = timeit.timeit(self.fetch_regions, number=1)
-            print(f"Время выполнения первого запроса на получение справочника: {elapsed_time}")
+            self.fetch_regions()
 
     def fetch_vacancies(self, search_string: str, region: int = 1, per_page: int = 5) -> VacancyList:
-        """Публичный метод. Получает список вакансий по ключевому слову."""
+        """Получает список вакансий по ключевому слову и региону."""
+
         params = {"text": search_string, "area": region, "per_page": per_page, "search_field": ["name", "description"]}
 
         response = self.__make_request("/vacancies", params).get("items", [])
@@ -48,7 +52,7 @@ class HHClient(BaseVacancyAPI):
 
     @staticmethod
     def __make_request(endpoint: str, params: dict = {}) -> dict | list[dict]:
-        """Приватный метод. Инкапсулирует логику обращения к API HeadHunter."""
+        """Выполняет HTTP-запрос к API HeadHunter."""
         url = f"{HHClient.BASE_URL}{endpoint}"
         response = requests.get(url, params=params)
 
@@ -59,6 +63,7 @@ class HHClient(BaseVacancyAPI):
 
     @staticmethod
     def __parse_vacancy(data: dict) -> Vacancy:
+        """Парсит данные вакансии из ответа API в объект Vacancy."""
         logger.debug(f"Добавление новой вакансии в VacancyList: {data}")
 
         vacancy_id = data.get("id")
@@ -81,7 +86,7 @@ class HHClient(BaseVacancyAPI):
     @classmethod
     @cache
     def fetch_regions(cls) -> None:
-        """Запрашивает список регионов с HH для сохранения их в self.region_names"""
+        """Загружает и кэширует справочник регионов HeadHunter."""
 
         response = cls.__make_request("/areas")
         logger.debug("Получен справочник регионов")
@@ -92,6 +97,7 @@ class HHClient(BaseVacancyAPI):
 
     @staticmethod
     def parse_regions(data: list[dict]) -> dict:
+        """Рекурсивно парсит иерархическую структуру регионов в плоский словарь."""
         region_names = {}
         for item in data:
             region_names[item["name"]] = int(item["id"])

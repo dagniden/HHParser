@@ -30,6 +30,9 @@ class Vacancy:
         attrs = {slot: getattr(self, slot) for slot in self.__slots__}
         return f"{attrs}"
 
+    def to_dict(self) -> dict:
+        return {slot: getattr(self, slot) for slot in self.__slots__}
+
 
 class VacancyList:
     """Класс для хранения списка вакансий"""
