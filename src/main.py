@@ -1,4 +1,5 @@
 import os
+import timeit
 
 from loguru import logger
 
@@ -45,17 +46,19 @@ def parse_regions(data):
 
 
 def main():
-    # result = parse_regions(data)
-    # print(result)
 
     hh = HHClient()
-    vacancies_list = hh.get_vacancies("руководитель")
+    vacancies_list = hh.fetch_vacancies("руководитель")
     logger.debug(f"Получено вакансий количество: {len(vacancies_list)}")
 
-    print(hh.region_names)
+    # print(hh.region_names)
 
-    hh.fetch_regions()
-    print(hh.region_names)
+    elapsed_time = timeit.timeit(hh.fetch_regions, number=1)
+    # print(hh.region_names)
+    print(f"Время выполнения запроса 2: {elapsed_time} секунд")
+
+    elapsed_time = timeit.timeit(hh.fetch_regions, number=1)
+    print(f"Время выполнения запроса 3: {elapsed_time} секунд")
 
 
 if __name__ == "__main__":
