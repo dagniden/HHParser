@@ -25,13 +25,15 @@ logs/
 classDiagram
     class BaseVacancyAPI {
         <<abstract>>
-        - base_url: str
+        + base_url: str
         + get_vacancies(query: str, per_page: int) -> VacancyList
     }
 
     class HHClient {
-        - base_url: str
+        + base_url: str
+        + region_names: dict
         + get_vacancies(query: str, per_page: int) -> VacancyList
+        + fetch_regions() -> dict 
     }
 
     class Vacancy {
@@ -95,6 +97,7 @@ https://api.hh.ru/openapi/redoc#tag/Obshie-spravochniki/operation/get-areas
 - [x] Сделать парсинг ответа от HH в модель Vacancy
 - [x] Наполнить VacancyList объектами Vacancy
 - [x] Добавить хардкодом набор search_fields для запроса получения вакансий
-- [ ] Добавить модель Region
-- [ ] Добавить список регионов в HHClient и его наполнение методом get_areas
+- [x] Добавлен словарь с названиями регионов и их id
+- [x] Добавить список регионов в HHClient и его наполнение методом fetch_regions()
+- 
 
