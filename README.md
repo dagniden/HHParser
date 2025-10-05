@@ -206,8 +206,9 @@ vacancies = client.fetch_vacancies("Python Developer", region=1, per_page=10)
 - [x] Парсинг ответов API
 - [x] Справочник регионов с кэшированием
 - [x] Реализация `JSONStorage`
-- [ ] Сравнение вакансий
-- [ ] Реализация методов `VacancyList`
+- [x] Сравнение вакансий
+- [x] Реализация методов `VacancyList`
+- [ ] Добавить логирование в models.py и storage.py
 - [ ] Консольный интерфейс (CLI)
 - [ ] Полное покрытие тестами
 
