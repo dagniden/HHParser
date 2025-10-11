@@ -30,11 +30,11 @@ class HHClient(BaseVacancyAPI):
     """Клиент для работы с API HeadHunter."""
 
     BASE_URL = "https://api.hh.ru"
-    region_names = {}
+    __region_names = {}
 
     def __init__(self):
         """Инициализирует клиент и загружает справочник регионов."""
-        if not self.region_names:
+        if not self.__region_names:
             self.fetch_regions()
 
     def fetch_vacancies(self, search_string: str, region: int = 1, per_page: int = 5) -> VacancyList:
@@ -53,6 +53,11 @@ class HHClient(BaseVacancyAPI):
             vacancy = self.__parse_vacancy(item)
             vacancy_list.add(vacancy)
         return vacancy_list
+
+    @property
+    def region_names(self):
+        """Геттер справочника регионов."""
+        return self.__region_names
 
     @staticmethod
     def __make_request(endpoint: str, params: dict = {}) -> dict | list[dict]:
@@ -97,7 +102,7 @@ class HHClient(BaseVacancyAPI):
 
         regions = cls.parse_regions(response)
         logger.debug(f"Сделан парсинг справочника регионов: {len(regions)}")
-        cls.region_names = regions
+        cls.__region_names = regions
 
     @staticmethod
     def parse_regions(data: list[dict]) -> dict:
