@@ -1,7 +1,9 @@
 import json
 import os
 from abc import ABC, abstractmethod
+
 from loguru import logger
+
 from src.models import Vacancy
 
 # Конфигурация логгера
