@@ -89,23 +89,3 @@ class JSONStorage(BaseStorage):
         """Сохраняет данные в файл"""
         with open(self.__filename, "w", encoding="utf-8") as file:
             json.dump(self.data, file, ensure_ascii=False, indent=4)
-
-
-if __name__ == "__main__":
-    vacancy1 = Vacancy(
-        "99887766",
-        "https://api.hh.ru/vacancies/124937232?host=hh.ru",
-        "Стилист",
-        "Ставить задачи, сопровождать и контролировать их выполнение . Удаленная работа.",
-        "Е-Клиник",
-        "Москва",
-        125000,
-        150000,
-    )
-
-    storage = JSONStorage("../data/test_vacancy.json")
-    print(storage.read())
-    storage.create(vacancy1)
-    storage.create(vacancy1)
-    storage.update(vacancy1)
-    print(storage.delete(vacancy1))
