@@ -58,8 +58,8 @@ class Vacancy:
 class VacancyList:
     """Класс для хранения списка вакансий"""
 
-    def __init__(self, vacancies: list[Vacancy]) -> None:
-        self.vacancies = vacancies
+    def __init__(self, vacancies: list[Vacancy] = None) -> None:
+        self.vacancies = vacancies if vacancies else []
 
     def add(self, vacancy: Vacancy) -> None:
         self.vacancies.append(vacancy)

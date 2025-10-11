@@ -47,8 +47,12 @@ class HHClient(BaseVacancyAPI):
         logger.debug(f"Ответ от headhunter: {response}")
         logger.debug(f"HHClient response length: {len(response)}")
 
-        result = VacancyList([self.__parse_vacancy(vacancy) for vacancy in response])
-        return result
+        vacancy_list = VacancyList()
+        # [self.__parse_vacancy(vacancy) for vacancy in response]
+        for item in response:
+            vacancy = self.__parse_vacancy(item)
+            vacancy_list.add(vacancy)
+        return vacancy_list
 
     @staticmethod
     def __make_request(endpoint: str, params: dict = {}) -> dict | list[dict]:
@@ -64,7 +68,7 @@ class HHClient(BaseVacancyAPI):
     @staticmethod
     def __parse_vacancy(data: dict) -> Vacancy:
         """Парсит данные вакансии из ответа API в объект Vacancy."""
-        logger.debug(f"Добавление новой вакансии в VacancyList: {data}")
+        logger.debug(f"Парсинг вакансии для добавления в VacancyList: {data}")
 
         vacancy_id = data.get("id")
         vacancy_url = data.get("url")
