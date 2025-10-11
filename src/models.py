@@ -19,8 +19,20 @@ class Vacancy:
         self.description = description
         self.company_name = company_name
         self.area_name = area_name
-        self.salary_from = salary_from
-        self.salary_to = salary_to
+        self.salary_from = self.__validate_salary_from(salary_from)
+        self.salary_to = self.__validate_salary_to(salary_to)
+
+    @staticmethod
+    def __validate_salary_from(value):
+        if value is None or value < 0:
+            return 0
+        return value
+
+    @staticmethod
+    def __validate_salary_to(value):
+        if value is None or value < 0:
+            return float("inf")
+        return value
 
     def __str__(self) -> str:
         attrs = {slot: getattr(self, slot) for slot in self.__slots__}
@@ -34,10 +46,7 @@ class Vacancy:
         return {slot: getattr(self, slot) for slot in self.__slots__}
 
     def salary_tuple(self):
-        return (
-            self.salary_from if self.salary_from is not None else 0,
-            self.salary_to if self.salary_to is not None else float("inf"),
-        )
+        return self.salary_from, self.salary_to
 
     def __lt__(self, other):
         return self.salary_tuple() < other.salary_tuple()
@@ -70,10 +79,7 @@ class VacancyList:
     def filter_by_salary_range(self, min_val: float, max_val: float) -> list[Vacancy]:
         result = []
         for x in self.vacancies:
-            from_ = x.salary_from if x.salary_from is not None else 0
-            to_ = x.salary_to if x.salary_to is not None else float("inf")
-
-            if from_ <= max_val and to_ >= min_val:
+            if x.salary_from <= max_val and x.salary_to >= min_val:
                 result.append(x)
         return result
 
