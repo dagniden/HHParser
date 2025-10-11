@@ -115,8 +115,7 @@ class VacancyList:
                 result.append(x)
 
         logger.info(
-            f"Фильтрация по зарплате {min_val}-{max_val}: "
-            f"найдено {len(result)} из {len(self.vacancies)} вакансий"
+            f"Фильтрация по зарплате {min_val}-{max_val}: " f"найдено {len(result)} из {len(self.vacancies)} вакансий"
         )
         return result
 
@@ -128,8 +127,7 @@ class VacancyList:
         logger.info(f"Получено топ-{n} вакансий из {len(self.vacancies)}")
         if result:
             logger.debug(
-                f"Топ вакансия: ID={result[0].vacancy_id}, "
-                f"Salary={result[0].salary_from}-{result[0].salary_to}"
+                f"Топ вакансия: ID={result[0].vacancy_id}, " f"Salary={result[0].salary_from}-{result[0].salary_to}"
             )
         return result
 
@@ -143,8 +141,5 @@ class VacancyList:
             if any(word in text for word in lower_words):
                 result.append(vacancy)
 
-        logger.info(
-            f"Фильтрация по словам {words}: "
-            f"найдено {len(result)} из {len(self.vacancies)} вакансий"
-        )
+        logger.info(f"Фильтрация по словам {words}: " f"найдено {len(result)} из {len(self.vacancies)} вакансий")
         return result

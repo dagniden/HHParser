@@ -209,8 +209,8 @@ vacancies = client.fetch_vacancies("Python Developer", region=1, per_page=10)
 - [x] Сравнение вакансий
 - [x] Реализация методов `VacancyList`
 - [x] Подключение метода `VacancyList.add` при парсинге вакансий
-- [ ] Добавить логирование в models.py
-- [ ] Добавить логирование в storage.py
+- [x] Добавить логирование в models.py
+- [x] Добавить логирование в storage.py
 - [ ] Консольный интерфейс (CLI)
 - [ ] Полное покрытие тестами
 

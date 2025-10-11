@@ -1,15 +1,13 @@
 import json
 import os
 
-import pytest
-
 from src.models import Vacancy
 from src.storage import JSONStorage
 
 
 def test_init_creates_file(test_filename):
     """Тест: инициализация создает файл"""
-    storage = JSONStorage(test_filename)
+    JSONStorage(test_filename)
     assert os.path.exists(test_filename)
 
 
@@ -113,7 +111,7 @@ def test_data_persistence(test_filename, sample_vacancy):
 
 def test_default_filename():
     """Тест: используется имя файла по умолчанию"""
-    storage = JSONStorage()
+    JSONStorage()
     assert os.path.exists("vacancies.json")
     # Cleanup
     os.remove("vacancies.json")
