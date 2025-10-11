@@ -41,7 +41,7 @@ class JSONStorage(BaseStorage):
         except FileExistsError:
             pass
 
-    def create(self, vacancy: Vacancy):
+    def create(self, vacancy: Vacancy) -> bool:
         """Добавляет новую вакансию без дублей"""
         self.read()
 
@@ -52,7 +52,7 @@ class JSONStorage(BaseStorage):
             return True
         return False
 
-    def read(self):
+    def read(self) -> list:
         """Получает данные из файла"""
         try:
             with open(self.__filename, "r", encoding="utf-8") as f:
@@ -62,7 +62,7 @@ class JSONStorage(BaseStorage):
             self.data = []
             return []
 
-    def update(self, vacancy: Vacancy):
+    def update(self, vacancy: Vacancy) -> bool:
         """Обновляет существующую вакансию"""
         self.read()
 
@@ -73,12 +73,12 @@ class JSONStorage(BaseStorage):
                 return True
         return False
 
-    def delete(self, vacancy_id: int):
-        """Удаляет вакансию по ID"""
+    def delete(self, vacancy: Vacancy) -> bool:
+        """Удаляет вакансию"""
         self.read()
 
         initial_length = len(self.data)
-        self.data = [item for item in self.data if int(item["vacancy_id"]) != vacancy_id]
+        self.data = [item for item in self.data if int(item["vacancy_id"]) != vacancy.vacancy_id]
 
         if len(self.data) < initial_length:
             self._save()
@@ -103,8 +103,9 @@ if __name__ == "__main__":
         150000,
     )
 
-    storage = JSONStorage("../data/vacancy.json")
+    storage = JSONStorage("../data/test_vacancy.json")
     print(storage.read())
-
+    storage.create(vacancy1)
+    storage.create(vacancy1)
     storage.update(vacancy1)
-    print(storage.delete(11223344))
+    print(storage.delete(vacancy1))
