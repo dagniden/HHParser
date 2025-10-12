@@ -77,7 +77,7 @@ class HHClient(BaseVacancyAPI):
 
         vacancy_id = data.get("id")
         vacancy_url = data.get("alternate_url")
-        title = data.get("title")
+        title = data.get("name")
         company_name = (data.get("employer") or {}).get("name")
         area_name = (data.get("area") or {}).get("name")
         salary_from = (data.get("salary") or {}).get("from")

@@ -59,7 +59,7 @@ class Vacancy:
 
     def __str__(self) -> str:
         result = (
-            f"Название вакансии: {self.vacancy_id}\n"
+            f"Название вакансии: {self.title}\n"
             f"Описание вакансии: {self.description}\n"
             f"Название компании: {self.company_name}\n"
             f"Зарплата: {self.salary_from}-{self.salary_to}\n"

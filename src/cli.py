@@ -70,21 +70,37 @@ class CLI:
 
     @staticmethod
     def show_menu() -> str:
-        print("Доступные действия: [1, 2]\n" "1. Показать сохраненные вакансии\n" "2. Сделать новый поиск вакансий\n")
-        result = CLI.__get_user_choice("Ваш выбор: ", [1, 2])
-        return "1. Показать сохраненные вакансии" if result == 1 else "2. Сделать новый поиск вакансий"
+        print("Доступные действия: [1, 2, 3]\n"
+              "1. Показать сохраненные вакансии\n"
+              "2. Сделать новый поиск вакансий\n"
+              "3. Выход")
+        result = CLI.__get_user_choice("Ваш выбор: ", [1, 2, 3])
+
+        if result == 1:
+            return "1. Показать сохраненные вакансии"
+        elif result == 2:
+            return "2. Сделать новый поиск вакансий"
+        else:
+            return "3. Выход"
 
     @staticmethod
     def ask_region_name(region_names: dict):
         while True:
             user_input = CLI.__get_user_input("Введите регион для поиска вакансий: ", str)
 
-            try:
-                key = region_names.get(user_input)
-                if key:
-                    return key
-                else:
-                    print(f"Введенный регион {user_input} отсутствует в справочнике!")
+            key = region_names.get(user_input)
+            if key:
+                return key
+            else:
+                print(f"Введенный регион {user_input} отсутствует в справочнике!")
 
-            except:
-                pass
+
+    @staticmethod
+    def ask_filter_by_word():
+        print("Фильтровать вакансии по ключевому слову? Да/Нет\n")
+        choice = CLI.__get_user_choice("Ваш выбор: ", ["да", "нет"])
+        if choice == "да":
+            result = CLI.__get_user_input("Введите ключевое слово для фильтрации: ", str)
+            return result.lower().split()
+        else:
+            return None
