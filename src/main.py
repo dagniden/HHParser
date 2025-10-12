@@ -34,7 +34,9 @@ def main():
         choice = cli.show_menu()
 
         if choice == "1. Показать сохраненные вакансии":
-            pass
+            loaded_vacancies = storage.read_as_vacancy_list()
+            loaded_vacancies.get_top_n(5)
+            cli.display_vacancies(loaded_vacancies.vacancies)
 
         elif choice == "2. Сделать новый поиск вакансий":
             query = cli.ask_search_query()

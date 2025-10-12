@@ -50,7 +50,7 @@ class HHClient(BaseVacancyAPI):
         vacancy_list = VacancyList()
         # [self.__parse_vacancy(vacancy) for vacancy in response]
         for item in response:
-            vacancy = self.__parse_vacancy(item)
+            vacancy = self.parse_vacancy(item)
             vacancy_list.add(vacancy)
         return vacancy_list
 
@@ -71,7 +71,7 @@ class HHClient(BaseVacancyAPI):
         return response.json()
 
     @staticmethod
-    def __parse_vacancy(data: dict) -> Vacancy:
+    def parse_vacancy(data: dict) -> Vacancy:
         """Парсит данные вакансии из ответа API в объект Vacancy."""
         logger.debug(f"Парсинг вакансии для добавления в VacancyList: {data}")
 

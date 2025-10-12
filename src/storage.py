@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 
 from loguru import logger
 
-from src.models import Vacancy
+from src.models import Vacancy, VacancyList
 
 # Конфигурация логгера
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -123,3 +123,39 @@ class JSONStorage(BaseStorage):
             logger.debug(f"Данные сохранены в файл: {self.__filename}, записей: {len(self.data)}")
         except Exception as e:
             logger.error(f"Ошибка при сохранении данных в файл {self.__filename}: {e}")
+
+    def read_as_vacancy_list(self) -> "VacancyList":
+        """
+        Читает файл JSON и возвращает объект VacancyList.
+        Преобразует строки 'inf' в float('inf').
+        """
+        self.read()  # загружает self.data из файла
+        vacancies = []
+
+        for item in self.data:
+            try:
+                # Конвертация "inf" → float("inf")
+                salary_from = item.get("salary_from")
+                salary_to = item.get("salary_to")
+
+                if salary_from == "inf":
+                    salary_from = float("inf")
+                if salary_to == "inf":
+                    salary_to = float("inf")
+
+                vacancy = Vacancy(
+                    vacancy_id=item.get("vacancy_id"),
+                    vacancy_url=item.get("vacancy_url"),
+                    title=item.get("title"),
+                    description=item.get("description"),
+                    company_name=item.get("company_name"),
+                    area_name=item.get("area_name"),
+                    salary_from=salary_from,
+                    salary_to=salary_to,
+                )
+                vacancies.append(vacancy)
+            except Exception as e:
+                logger.error(f"Ошибка при создании Vacancy из записи {item}: {e}")
+
+        logger.info(f"Создан VacancyList из {len(vacancies)} вакансий")
+        return VacancyList(vacancies)
