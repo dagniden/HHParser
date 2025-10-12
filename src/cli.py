@@ -1,6 +1,4 @@
-from src.models import VacancyList, Vacancy
-from src.storage import JSONStorage
-from src.vacancy_api import HHClient
+from src.models import Vacancy
 
 
 class CLI:
@@ -13,8 +11,8 @@ class CLI:
     @staticmethod
     def ask_top_n() -> int | None:
         print("Вывести только топ N вакансий? Да/Нет\n")
-        choice = CLI.__get_user_choice("Ваш выбор: ", ['да', 'нет'])
-        if choice == 'да':
+        choice = CLI.__get_user_choice("Ваш выбор: ", ["да", "нет"])
+        if choice == "да":
             return CLI.__get_user_input("Введите количество вакансий для отображения: ", int)
         else:
             return None
@@ -22,8 +20,8 @@ class CLI:
     @staticmethod
     def ask_filter_range():
         print("Фильтровать вакансии по зарплате? Да/Нет\n")
-        choice = CLI.__get_user_choice("Ваш выбор: ", ['да', 'нет'])
-        if choice == 'да':
+        choice = CLI.__get_user_choice("Ваш выбор: ", ["да", "нет"])
+        if choice == "да":
             min_val = CLI.__get_user_input("Введите минимальную зарплату: ", int)
             max_val = CLI.__get_user_input("Введите максимальную зарплату: ", int)
             return min_val, max_val
@@ -72,8 +70,21 @@ class CLI:
 
     @staticmethod
     def show_menu() -> str:
-        print("Доступные действия: [1, 2]\n"
-              "1. Показать сохраненные вакансии\n"
-              "2. Сделать новый поиск вакансий\n")
+        print("Доступные действия: [1, 2]\n" "1. Показать сохраненные вакансии\n" "2. Сделать новый поиск вакансий\n")
         result = CLI.__get_user_choice("Ваш выбор: ", [1, 2])
         return "1. Показать сохраненные вакансии" if result == 1 else "2. Сделать новый поиск вакансий"
+
+    @staticmethod
+    def ask_region_name(region_names: dict):
+        while True:
+            user_input = CLI.__get_user_input("Введите регион для поиска вакансий: ", str)
+
+            try:
+                key = region_names.get(user_input)
+                if key:
+                    return key
+                else:
+                    print(f"Введенный регион {user_input} отсутствует в справочнике!")
+
+            except:
+                pass

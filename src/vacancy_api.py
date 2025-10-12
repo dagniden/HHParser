@@ -37,7 +37,7 @@ class HHClient(BaseVacancyAPI):
         if not self.__region_names:
             self.fetch_regions()
 
-    def fetch_vacancies(self, search_string: str, region: int = 1, per_page: int = 5) -> VacancyList:
+    def fetch_vacancies(self, search_string: str, region: int = 1, per_page: int = 100) -> VacancyList:
         """Получает список вакансий по ключевому слову и региону."""
 
         params = {"text": search_string, "area": region, "per_page": per_page, "search_field": ["name", "description"]}

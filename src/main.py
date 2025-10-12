@@ -1,19 +1,12 @@
 import os
-import sys
+
 
 from loguru import logger
 
 from src.cli import CLI
-from src.models import Vacancy, VacancyList
+
 from src.storage import JSONStorage
 from src.vacancy_api import HHClient
-
-# logger.remove()
-#
-# # Добавляем консольный логгер в зависимости от переменной окружения
-# console_log_level = os.getenv("CONSOLE_LOG_LEVEL", "INFO")
-# if console_log_level.upper() != "NONE":
-#     logger.add(sys.stderr, level=console_log_level.upper())
 
 # Конфигурация логгера для файла
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -35,15 +28,20 @@ def main():
 
         if choice == "1. Показать сохраненные вакансии":
             loaded_vacancies = storage.read_as_vacancy_list()
-            loaded_vacancies.get_top_n(5)
+
+            top_n = cli.ask_top_n()
+            if top_n:
+                loaded_vacancies.get_top_n(top_n)
+
             cli.display_vacancies(loaded_vacancies.vacancies)
 
         elif choice == "2. Сделать новый поиск вакансий":
+            region_id = cli.ask_region_name(hh_client.region_names)
             query = cli.ask_search_query()
             min_val, max_val = cli.ask_filter_range()
-
             top_n = cli.ask_top_n()
-            vacancy_list = hh_client.fetch_vacancies(query)
+
+            vacancy_list = hh_client.fetch_vacancies(query, region = region_id)
 
             if min_val and max_val:
                 vacancy_list.filter_by_salary_range(min_val, max_val)
@@ -59,4 +57,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

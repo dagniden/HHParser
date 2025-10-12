@@ -58,12 +58,14 @@ class Vacancy:
         return value
 
     def __str__(self) -> str:
-        result = (f"Название вакансии: {self.vacancy_id}\n"
-                  f"Описание вакансии: {self.description}\n"
-                  f"Название компании: {self.company_name}\n"
-                  f"Зарплата: {self.salary_from}-{self.salary_to}\n"
-                  f"Регион: {self.area_name}\n"
-                  f"Ссылка на вакансию: {self.vacancy_url}\n")
+        result = (
+            f"Название вакансии: {self.vacancy_id}\n"
+            f"Описание вакансии: {self.description}\n"
+            f"Название компании: {self.company_name}\n"
+            f"Зарплата: {self.salary_from}-{self.salary_to}\n"
+            f"Регион: {self.area_name}\n"
+            f"Ссылка на вакансию: {self.vacancy_url}\n"
+        )
         return result
 
     def __repr__(self) -> str:
@@ -121,10 +123,7 @@ class VacancyList:
         """Фильтрует вакансии по диапазону зарплат (in-place)."""
         logger.debug(f"Фильтрация по зарплате: {min_val} - {max_val}")
         before_count = len(self.vacancies)
-        self.vacancies = [
-            x for x in self.vacancies
-            if x.salary_from <= max_val and x.salary_to >= min_val
-        ]
+        self.vacancies = [x for x in self.vacancies if x.salary_from <= max_val and x.salary_to >= min_val]
         logger.info(f"Фильтрация по зарплате {min_val}-{max_val}: найдено {len(self.vacancies)} из {before_count}")
         return self
 
@@ -143,7 +142,8 @@ class VacancyList:
         lower_words = [w.lower() for w in words]
 
         self.vacancies = [
-            vacancy for vacancy in self.vacancies
+            vacancy
+            for vacancy in self.vacancies
             if any(word in (vacancy.title + " " + vacancy.description).lower() for word in lower_words)
         ]
 
