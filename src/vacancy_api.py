@@ -76,7 +76,7 @@ class HHClient(BaseVacancyAPI):
         logger.debug(f"Парсинг вакансии для добавления в VacancyList: {data}")
 
         vacancy_id = data.get("id")
-        vacancy_url = data.get("url")
+        vacancy_url = data.get("alternate_url")
         title = data.get("title")
         company_name = (data.get("employer") or {}).get("name")
         area_name = (data.get("area") or {}).get("name")

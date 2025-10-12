@@ -1,13 +1,10 @@
-from src.models import VacancyList
+from src.models import VacancyList, Vacancy
 from src.storage import JSONStorage
 from src.vacancy_api import HHClient
 
 
 class CLI:
     """Класс для ввода/вывода информации пользователем"""
-
-    def __init__(self):
-        pass
 
     @staticmethod
     def ask_search_query() -> str:
@@ -18,9 +15,20 @@ class CLI:
         print("Вывести только топ N вакансий? Да/Нет\n")
         choice = CLI.__get_user_choice("Ваш выбор: ", ['да', 'нет'])
         if choice == 'да':
-            return CLI.__get_user_input("Введите количество вакансий для отображения: ", type(int))
+            return CLI.__get_user_input("Введите количество вакансий для отображения: ", int)
         else:
             return None
+
+    @staticmethod
+    def ask_filter_range():
+        print("Фильтровать вакансии по зарплате? Да/Нет\n")
+        choice = CLI.__get_user_choice("Ваш выбор: ", ['да', 'нет'])
+        if choice == 'да':
+            min_val = CLI.__get_user_input("Введите минимальную зарплату: ", int)
+            max_val = CLI.__get_user_input("Введите максимальную зарплату: ", int)
+            return min_val, max_val
+        else:
+            return None, None
 
     @staticmethod
     def __get_user_input(message: str, input_type: type(str) | type(int)) -> int | str:
@@ -41,34 +49,31 @@ class CLI:
     @staticmethod
     def __get_user_choice(message: str, correct_choices: list) -> str:
         while True:
-            user_input = input(message).strip().lower()
-            if user_input in [choice.lower() for choice in correct_choices]:
-                return user_input
-            print("Введено некорректное значение, попробуйте снова")
+            user_input = input(message)
+            try:
+                # Преобразуем ответ пользователя к типу правильного ответа
+                user_choice = type(correct_choices[0])(user_input)
 
-    def display_vacancies(self):
-        pass
+                if isinstance(user_choice, str):
+                    # Для корректного сравнения строк преобразуем к нижнему регистру
+                    user_choice = user_choice.lower()
 
-    def show_menu(self):
-        pass
+                if user_choice in correct_choices:
+                    return user_choice
+                else:
+                    print("Введено некорректное значение")
+            except ValueError:
+                print("Введено некорректное значение")
 
+    @staticmethod
+    def display_vacancies(vacancies: list[Vacancy]) -> None:
+        for item in vacancies:
+            print(item)
 
-class VacancyService:
-    """Бизнес-логика приложения"""
-
-    def __init__(self):
-        self.api_client = HHClient()
-        self.storage = JSONStorage()
-        self.vacancy_list = VacancyList()
-
-    def search_and_save(self, query: str, region: int):
-        pass
-
-    def get_top_vacancies(self, n: int):
-        pass
-
-    def filter_by_keywords(self, words: list[str]):
-        pass
-
-    def save_to_storage(self):
-        pass
+    @staticmethod
+    def show_menu() -> str:
+        print("Доступные действия: [1, 2]\n"
+              "1. Показать сохраненные вакансии\n"
+              "2. Сделать новый поиск вакансий\n")
+        result = CLI.__get_user_choice("Ваш выбор: ", [1, 2])
+        return "1. Показать сохраненные вакансии" if result == 1 else "2. Сделать новый поиск вакансий"

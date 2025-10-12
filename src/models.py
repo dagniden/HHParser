@@ -58,15 +58,25 @@ class Vacancy:
         return value
 
     def __str__(self) -> str:
-        attrs = {slot: getattr(self, slot) for slot in self.__slots__}
-        return f"{attrs}"
+        result = (f"Название вакансии: {self.vacancy_id}\n"
+                  f"Описание вакансии: {self.description}\n"
+                  f"Название компании: {self.company_name}\n"
+                  f"Зарплата: {self.salary_from}-{self.salary_to}\n"
+                  f"Регион: {self.area_name}\n"
+                  f"Ссылка на вакансию: {self.vacancy_url}\n")
+        return result
 
     def __repr__(self) -> str:
         attrs = {slot: getattr(self, slot) for slot in self.__slots__}
         return f"{attrs}"
 
     def to_dict(self) -> dict:
-        return {slot: getattr(self, slot) for slot in self.__slots__}
+        data = {slot: getattr(self, slot) for slot in self.__slots__}
+        for key in ("salary_from", "salary_to"):
+            value = data[key]
+            if isinstance(value, float) and value == float("inf"):
+                data[key] = "inf"
+        return data
 
     def salary_tuple(self):
         return self.salary_from, self.salary_to
@@ -107,39 +117,41 @@ class VacancyList:
     def __len__(self) -> int:
         return len(self.vacancies)
 
-    def filter_by_salary_range(self, min_val: float, max_val: float) -> list[Vacancy]:
+    def filter_by_salary_range(self, min_val: float, max_val: float) -> "VacancyList":
+        """Фильтрует вакансии по диапазону зарплат (in-place)."""
         logger.debug(f"Фильтрация по зарплате: {min_val} - {max_val}")
-        result = []
-        for x in self.vacancies:
-            if x.salary_from <= max_val and x.salary_to >= min_val:
-                result.append(x)
+        before_count = len(self.vacancies)
+        self.vacancies = [
+            x for x in self.vacancies
+            if x.salary_from <= max_val and x.salary_to >= min_val
+        ]
+        logger.info(f"Фильтрация по зарплате {min_val}-{max_val}: найдено {len(self.vacancies)} из {before_count}")
+        return self
 
-        logger.info(
-            f"Фильтрация по зарплате {min_val}-{max_val}: " f"найдено {len(result)} из {len(self.vacancies)} вакансий"
-        )
-        return result
-
-    def get_top_n(self, n: int) -> list[Vacancy]:
+    def get_top_n(self, n: int) -> "VacancyList":
+        """Оставляет только топ-N вакансий (in-place)."""
         logger.debug(f"Получение топ-{n} вакансий")
-        sorted_vacancies = sorted(self.vacancies, reverse=True)
-        result = sorted_vacancies[:n]
+        before_count = len(self.vacancies)
+        self.vacancies = sorted(self.vacancies, reverse=True)[:n]
+        logger.info(f"Оставлено топ-{n} вакансий из {before_count}")
+        return self
 
-        logger.info(f"Получено топ-{n} вакансий из {len(self.vacancies)}")
-        if result:
-            logger.debug(
-                f"Топ вакансия: ID={result[0].vacancy_id}, " f"Salary={result[0].salary_from}-{result[0].salary_to}"
-            )
-        return result
-
-    def filter_by_words(self, words: list[str]) -> list[Vacancy]:
+    def filter_by_words(self, words: list[str]) -> "VacancyList":
+        """Фильтрует вакансии по ключевым словам (in-place)."""
         logger.debug(f"Фильтрация по ключевым словам: {words}")
-        result = []
+        before_count = len(self.vacancies)
         lower_words = [w.lower() for w in words]
 
-        for vacancy in self.vacancies:
-            text = (vacancy.title + " " + vacancy.description).lower()
-            if any(word in text for word in lower_words):
-                result.append(vacancy)
+        self.vacancies = [
+            vacancy for vacancy in self.vacancies
+            if any(word in (vacancy.title + " " + vacancy.description).lower() for word in lower_words)
+        ]
 
-        logger.info(f"Фильтрация по словам {words}: " f"найдено {len(result)} из {len(self.vacancies)} вакансий")
-        return result
+        logger.info(f"Фильтрация по словам {words}: найдено {len(self.vacancies)} из {before_count}")
+        return self
+
+    def __iter__(self):
+        return iter(self.vacancies)
+
+    def __getitem__(self, index):
+        return self.vacancies[index]
