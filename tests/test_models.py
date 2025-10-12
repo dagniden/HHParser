@@ -43,12 +43,12 @@ def test_vacancy_comparison() -> None:
     v2 = Vacancy(2, "", "Vacancy2", "", "Comp", "Moscow", 120000, None)
     v3 = Vacancy(3, "", "Vacancy3", "", "Comp", "Moscow", None, 150000)
 
-    assert (v1 < v2) == True
-    assert (v3 < v1) == True
-    assert (v1 > v2) == False
-    assert (v1 >= v2) == False
-    assert (v3 <= v1) == True
-    assert (v1 == v1) == True
+    assert v1 < v2
+    assert v3 < v1
+    assert not (v1 > v2)
+    assert not (v1 >= v2)
+    assert v3 <= v1
+    assert v1 == v1
 
 
 def test_vacancy_list(vacancy: Vacancy) -> None:
