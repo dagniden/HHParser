@@ -1,4 +1,5 @@
 import os
+from typing import Any, Generator
 
 import pytest
 
@@ -29,7 +30,7 @@ def vacancy_list() -> VacancyList:
 
 
 @pytest.fixture
-def test_filename():
+def test_filename() -> Generator[str, Any, None]:
     """Фикстура для создания временного тестового файла"""
     filename = "test_vacancies.json"
     yield filename
@@ -39,7 +40,7 @@ def test_filename():
 
 
 @pytest.fixture
-def sample_vacancy():
+def sample_vacancy() -> Vacancy:
     """Фикстура для создания тестовой вакансии"""
     return Vacancy(
         vacancy_id="12345",
@@ -54,7 +55,7 @@ def sample_vacancy():
 
 
 @pytest.fixture
-def another_vacancy():
+def another_vacancy() -> Vacancy:
     """Фикстура для создания второй тестовой вакансии"""
     return Vacancy(
         vacancy_id="67890",

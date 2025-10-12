@@ -1,6 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from functools import cache
+from typing import Any
 
 import requests
 from loguru import logger
@@ -30,9 +31,9 @@ class HHClient(BaseVacancyAPI):
     """Клиент для работы с API HeadHunter."""
 
     BASE_URL = "https://api.hh.ru"
-    __region_names = {}
+    __region_names: dict = {}
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Инициализирует клиент и загружает справочник регионов."""
         if not self.__region_names:
             self.fetch_regions()
@@ -55,12 +56,12 @@ class HHClient(BaseVacancyAPI):
         return vacancy_list
 
     @property
-    def region_names(self):
+    def region_names(self) -> dict:
         """Геттер справочника регионов."""
         return self.__region_names
 
     @staticmethod
-    def __make_request(endpoint: str, params: dict = {}) -> dict | list[dict]:
+    def __make_request(endpoint: str, params: dict = {}) -> Any:
         """Выполняет HTTP-запрос к API HeadHunter."""
         url = f"{HHClient.BASE_URL}{endpoint}"
         response = requests.get(url, params=params)
@@ -76,15 +77,15 @@ class HHClient(BaseVacancyAPI):
         logger.debug(f"Парсинг вакансии для добавления в VacancyList: {data}")
 
         vacancy_id = data.get("id")
-        vacancy_url = data.get("alternate_url")
-        title = data.get("name")
-        company_name = (data.get("employer") or {}).get("name")
-        area_name = (data.get("area") or {}).get("name")
+        vacancy_url = str(data.get("alternate_url"))
+        title = str(data.get("name"))
+        company_name = str((data.get("employer") or {}).get("name"))
+        area_name = str((data.get("area") or {}).get("name"))
         salary_from = (data.get("salary") or {}).get("from")
         salary_to = (data.get("salary") or {}).get("to")
 
-        responsibility = (data.get("snippet") or {}).get("responsibility")
-        schedule = (data.get("schedule") or {}).get("name")
+        responsibility = str((data.get("snippet") or {}).get("responsibility"))
+        schedule = str((data.get("schedule") or {}).get("name"))
         description = f"{responsibility} {schedule}."
 
         vacancy = Vacancy(vacancy_id, vacancy_url, title, description, company_name, area_name, salary_from, salary_to)

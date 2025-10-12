@@ -27,7 +27,7 @@ src/
 ├── main.py            # точка входа в программу
 ├── vacancy_api.py     # BaseVacancyAPI, HHClient
 ├── models.py          # Vacancy, VacancyList
-├── storage.py         # BaseStorage (CRUD), JSONStorage
+├── storage.py         # BaseStorage, JSONStorage - реализует CRUD хранилище
 └── cli.py             # интерфейс пользователя (консоль)
 
 tests/
@@ -38,7 +38,9 @@ tests/
 
 logs/
 ├── main.log
-└── vacancy_api.log
+├── vacancy_api.log
+├── storage.log
+└── models.log
 ```
 
 ### Диаграмма классов
@@ -420,7 +422,7 @@ CLI.display_vacancies(vacancy_list)
 - [x] Добавить логирование в models.py
 - [x] Добавить логирование в storage.py
 - [x] Консольный интерфейс (CLI)
-- [ ] Полное покрытие тестами
+- [x] Полное покрытие тестами
 
 ## Чек-лист требований
 
@@ -508,7 +510,7 @@ CLI.display_vacancies(vacancy_list)
 ### Тестирование
 
 - [x] Написаны тесты для функциональностей проекта.
-- [ ] Общее покрытие функционального кода — более 70%.
+- [x] Общее покрытие функционального кода — более 70%.
 
 ## Зависимости
 

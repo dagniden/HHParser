@@ -1,3 +1,5 @@
+from typing import Any
+
 from src.models import Vacancy
 
 
@@ -11,25 +13,25 @@ class CLI:
     @staticmethod
     def ask_top_n() -> int | None:
         print("Вывести только топ N вакансий? Да/Нет\n")
-        choice = CLI.__get_user_choice("Ваш выбор: ", ["да", "нет"])
+        choice = CLI._get_user_choice("Ваш выбор: ", ["да", "нет"])
         if choice == "да":
-            return CLI.__get_user_input("Введите количество вакансий для отображения: ", int)
+            return int(CLI._get_user_input("Введите количество вакансий для отображения: ", int))
         else:
             return None
 
     @staticmethod
-    def ask_filter_range():
+    def ask_filter_range() -> tuple:
         print("Фильтровать вакансии по зарплате? Да/Нет\n")
-        choice = CLI.__get_user_choice("Ваш выбор: ", ["да", "нет"])
+        choice = CLI._get_user_choice("Ваш выбор: ", ["да", "нет"])
         if choice == "да":
-            min_val = CLI.__get_user_input("Введите минимальную зарплату: ", int)
-            max_val = CLI.__get_user_input("Введите максимальную зарплату: ", int)
+            min_val = CLI._get_user_input("Введите минимальную зарплату: ", int)
+            max_val = CLI._get_user_input("Введите максимальную зарплату: ", int)
             return min_val, max_val
         else:
             return None, None
 
     @staticmethod
-    def __get_user_input(message: str, input_type: type(str) | type(int)) -> int | str:
+    def _get_user_input(message: str, input_type: type[str] | type[int]) -> int | str:
 
         while True:
             user_input = input(message)
@@ -45,7 +47,7 @@ class CLI:
                 return user_input.strip()
 
     @staticmethod
-    def __get_user_choice(message: str, correct_choices: list) -> str:
+    def _get_user_choice(message: str, correct_choices: list) -> Any:
         while True:
             user_input = input(message)
             try:
@@ -70,11 +72,13 @@ class CLI:
 
     @staticmethod
     def show_menu() -> str:
-        print("Доступные действия: [1, 2, 3]\n"
-              "1. Показать сохраненные вакансии\n"
-              "2. Сделать новый поиск вакансий\n"
-              "3. Выход")
-        result = CLI.__get_user_choice("Ваш выбор: ", [1, 2, 3])
+        print(
+            "Доступные действия: [1, 2, 3]\n"
+            "1. Показать сохраненные вакансии\n"
+            "2. Сделать новый поиск вакансий\n"
+            "3. Выход"
+        )
+        result = CLI._get_user_choice("Ваш выбор: ", [1, 2, 3])
 
         if result == 1:
             return "1. Показать сохраненные вакансии"
@@ -84,9 +88,9 @@ class CLI:
             return "3. Выход"
 
     @staticmethod
-    def ask_region_name(region_names: dict):
+    def ask_region_name(region_names: dict) -> Any:
         while True:
-            user_input = CLI.__get_user_input("Введите регион для поиска вакансий: ", str)
+            user_input = CLI._get_user_input("Введите регион для поиска вакансий: ", str)
 
             key = region_names.get(user_input)
             if key:
@@ -94,13 +98,12 @@ class CLI:
             else:
                 print(f"Введенный регион {user_input} отсутствует в справочнике!")
 
-
     @staticmethod
-    def ask_filter_by_word():
+    def ask_filter_by_word() -> list[str] | None:
         print("Фильтровать вакансии по ключевому слову? Да/Нет\n")
-        choice = CLI.__get_user_choice("Ваш выбор: ", ["да", "нет"])
+        choice = CLI._get_user_choice("Ваш выбор: ", ["да", "нет"])
         if choice == "да":
-            result = CLI.__get_user_input("Введите ключевое слово для фильтрации: ", str)
-            return result.lower().split()
+            result = CLI._get_user_input("Введите ключевое слово для фильтрации: ", str)
+            return str(result).lower().split()
         else:
             return None

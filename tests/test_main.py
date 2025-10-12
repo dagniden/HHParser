@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from src.main import main
 
@@ -7,7 +6,7 @@ from src.main import main
 @patch("src.main.CLI")
 @patch("src.main.HHClient")
 @patch("src.main.JSONStorage")
-def test_main_exit(mock_storage_cls, mock_hhclient_cls, mock_cli_cls):
+def test_main_exit(mock_storage_cls: MagicMock, mock_hhclient_cls: MagicMock, mock_cli_cls: MagicMock) -> None:
     # Настраиваем CLI
     mock_cli = MagicMock()
     mock_cli.show_menu.side_effect = ["3. Выход"]  # имитируем сразу выход
@@ -30,7 +29,7 @@ def test_main_exit(mock_storage_cls, mock_hhclient_cls, mock_cli_cls):
 @patch("src.main.CLI")
 @patch("src.main.HHClient")
 @patch("src.main.JSONStorage")
-def test_main_show_saved(mock_storage_cls, mock_hhclient_cls, mock_cli_cls):
+def test_main_show_saved(mock_storage_cls: MagicMock, mock_hhclient_cls: MagicMock, mock_cli_cls: MagicMock) -> None:
     mock_cli = MagicMock()
     mock_cli.show_menu.side_effect = ["1. Показать сохраненные вакансии", "3. Выход"]
     mock_cli.ask_top_n.return_value = None

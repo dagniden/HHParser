@@ -1,10 +1,8 @@
 import os
 
-
 from loguru import logger
 
 from src.cli import CLI
-
 from src.storage import JSONStorage
 from src.vacancy_api import HHClient
 
@@ -15,6 +13,11 @@ os.makedirs(log_dir, exist_ok=True)
 log_file = os.path.join(log_dir, "main.log")
 logger.add(sink=log_file, level="DEBUG")
 
+# Удаляем стандартный консольный sink
+logger.remove()  # <- это убирает все существующие sinks, включая консоль
+
+# Добавляем только файловый sink
+logger.add(sink=log_file, level="DEBUG")
 
 def main() -> int:
     """Координатор - связывает CLI"""
@@ -40,7 +43,7 @@ def main() -> int:
             query = cli.ask_search_query()
             min_val, max_val = cli.ask_filter_range()
             top_n = cli.ask_top_n()
-            vacancy_list = hh_client.fetch_vacancies(query, region = region_id)
+            vacancy_list = hh_client.fetch_vacancies(query, region=region_id)
             filter_words = cli.ask_filter_by_word()
 
             if filter_words:
@@ -59,6 +62,7 @@ def main() -> int:
 
         elif choice == "3. Выход":
             return 0
+
 
 if __name__ == "__main__":
     main()

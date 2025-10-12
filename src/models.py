@@ -1,4 +1,5 @@
 import os
+from typing import Iterator, Optional, Any
 
 from loguru import logger
 
@@ -24,7 +25,17 @@ class Vacancy:
         "salary_to",
     )
 
-    def __init__(self, vacancy_id, vacancy_url, title, description, company_name, area_name, salary_from, salary_to):
+    def __init__(
+        self,
+        vacancy_id: Any,
+        vacancy_url: str,
+        title: str,
+        description: str,
+        company_name: str,
+        area_name: str,
+        salary_from: float | None,
+        salary_to: float | None,
+    ) -> None:
         logger.debug(f"Создание вакансии: ID={vacancy_id}, Title='{title}'")
 
         self.vacancy_id = vacancy_id
@@ -42,7 +53,7 @@ class Vacancy:
         )
 
     @staticmethod
-    def __validate_salary_from(value):
+    def __validate_salary_from(value: float) -> float:
         if value is None or value < 0:
             logger.debug(f"Валидация salary_from: {value} -> 0")
             return 0
@@ -50,7 +61,7 @@ class Vacancy:
         return value
 
     @staticmethod
-    def __validate_salary_to(value):
+    def __validate_salary_to(value: float) -> float:
         if value is None or value < 0:
             logger.debug(f"Валидация salary_to: {value} -> inf")
             return float("inf")
@@ -80,35 +91,37 @@ class Vacancy:
                 data[key] = "inf"
         return data
 
-    def salary_tuple(self):
+    def salary_tuple(self) -> tuple:
         return self.salary_from, self.salary_to
 
-    def __lt__(self, other):
+    def __lt__(self, other: "Vacancy") -> bool:
         result = self.salary_tuple() < other.salary_tuple()
         logger.debug(f"Сравнение {self.vacancy_id} < {other.vacancy_id}: {result}")
         return result
 
-    def __le__(self, other):
+    def __le__(self, other: "Vacancy") -> bool:
         return self.salary_tuple() <= other.salary_tuple()
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Vacancy):
+            return NotImplemented
         result = self.salary_tuple() == other.salary_tuple()
         logger.debug(f"Сравнение {self.vacancy_id} == {other.vacancy_id}: {result}")
         return result
 
-    def __gt__(self, other):
+    def __gt__(self, other: "Vacancy") -> bool:
         result = self.salary_tuple() > other.salary_tuple()
         logger.debug(f"Сравнение {self.vacancy_id} > {other.vacancy_id}: {result}")
         return result
 
-    def __ge__(self, other):
+    def __ge__(self, other: "Vacancy") -> bool:
         return self.salary_tuple() >= other.salary_tuple()
 
 
 class VacancyList:
     """Класс для хранения списка вакансий"""
 
-    def __init__(self, vacancies: list[Vacancy] = None) -> None:
+    def __init__(self, vacancies: Optional[list[Vacancy]] = None) -> None:
         self.vacancies = vacancies if vacancies else []
         logger.info(f"VacancyList инициализирован с {len(self.vacancies)} вакансиями")
 
@@ -150,8 +163,8 @@ class VacancyList:
         logger.info(f"Фильтрация по словам {words}: найдено {len(self.vacancies)} из {before_count}")
         return self
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Vacancy]:
         return iter(self.vacancies)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> Vacancy:
         return self.vacancies[index]

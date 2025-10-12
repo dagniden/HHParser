@@ -1,12 +1,13 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from src.vacancy_api import HHClient
+import pytest
+
 from src.models import Vacancy, VacancyList
+from src.vacancy_api import HHClient
 
 
 @pytest.fixture
-def mock_vacancy_data():
+def mock_vacancy_data() -> dict:
     return {
         "id": "123",
         "name": "Python Developer",
@@ -20,7 +21,7 @@ def mock_vacancy_data():
 
 
 @pytest.fixture
-def mock_region_data():
+def mock_region_data() -> list:
     return [
         {
             "id": "1",
@@ -33,7 +34,7 @@ def mock_region_data():
     ]
 
 
-def test_parse_vacancy(mock_vacancy_data):
+def test_parse_vacancy(mock_vacancy_data: MagicMock) -> None:
     """Проверяем корректность парсинга одной вакансии"""
     vacancy = HHClient.parse_vacancy(mock_vacancy_data)
     assert isinstance(vacancy, Vacancy)
@@ -46,7 +47,7 @@ def test_parse_vacancy(mock_vacancy_data):
     assert "Полный день" in vacancy.description
 
 
-def test_parse_regions(mock_region_data):
+def test_parse_regions(mock_region_data: MagicMock) -> None:
     """Проверяем, что регионы парсятся в плоский словарь"""
     regions = HHClient.parse_regions(mock_region_data)
     assert isinstance(regions, dict)
@@ -56,7 +57,7 @@ def test_parse_regions(mock_region_data):
 
 
 @patch("src.vacancy_api.HHClient._HHClient__make_request")
-def test_fetch_regions(mock_request, mock_region_data):
+def test_fetch_regions(mock_request: MagicMock, mock_region_data: MagicMock) -> None:
     """Тестирует fetch_regions с мокнутым запросом"""
     mock_request.return_value = mock_region_data
 
@@ -69,7 +70,7 @@ def test_fetch_regions(mock_request, mock_region_data):
 
 
 @patch("src.vacancy_api.HHClient._HHClient__make_request")
-def test_fetch_vacancies(mock_request, mock_vacancy_data):
+def test_fetch_vacancies(mock_request: MagicMock, mock_vacancy_data: MagicMock) -> None:
     """Проверяем, что fetch_vacancies возвращает VacancyList"""
     mock_request.return_value = {"items": [mock_vacancy_data]}
 
@@ -82,7 +83,7 @@ def test_fetch_vacancies(mock_request, mock_vacancy_data):
 
 
 @patch("requests.get")
-def test_make_request_success(mock_get):
+def test_make_request_success(mock_get: MagicMock) -> None:
     """Проверяем, что __make_request возвращает JSON при 200 OK"""
     mock_response = MagicMock()
     mock_response.status_code = 200
@@ -94,7 +95,7 @@ def test_make_request_success(mock_get):
 
 
 @patch("requests.get")
-def test_make_request_failure(mock_get):
+def test_make_request_failure(mock_get: MagicMock) -> None:
     """Проверяем, что при ошибке HTTP выбрасывается исключение"""
     mock_response = MagicMock()
     mock_response.status_code = 500

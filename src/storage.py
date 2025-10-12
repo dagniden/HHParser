@@ -16,35 +16,35 @@ logger.add(sink=log_file, level="DEBUG")
 
 class BaseStorage(ABC):
     @abstractmethod
-    def create(self, vacancy):
+    def create(self, vacancy: Vacancy) -> bool:
         """Добавляет вакансию в файл"""
         pass
 
     @abstractmethod
-    def read(self):
+    def read(self) -> list:
         """Получает данные из файла"""
         pass
 
     @abstractmethod
-    def update(self, vacancy):
+    def update(self, vacancy: Vacancy) -> bool:
         """Обновляет вакансию в файле"""
         pass
 
     @abstractmethod
-    def delete(self, vacancy):
+    def delete(self, vacancy: Vacancy) -> bool:
         """Удаляет вакансию из файла"""
         pass
 
 
 class JSONStorage(BaseStorage):
-    def __init__(self, filename="vacancies.json"):
+    def __init__(self, filename: str = "vacancies.json") -> None:
         self.__filename = filename
-        self.data = []
+        self.data: list = []
         logger.info(f"Инициализация JSONStorage с файлом: {filename}")
         self._init_file()
         self.read()
 
-    def _init_file(self):
+    def _init_file(self) -> None:
         """Создает файл с пустым JSON-массивом, если его нет"""
         try:
             with open(self.__filename, "x", encoding="utf-8") as file:
@@ -115,7 +115,7 @@ class JSONStorage(BaseStorage):
         logger.warning(f"Вакансия для удаления не найдена: ID={vacancy.vacancy_id}")
         return False
 
-    def _save(self):
+    def _save(self) -> None:
         """Сохраняет данные в файл"""
         try:
             with open(self.__filename, "w", encoding="utf-8") as file:

@@ -3,7 +3,7 @@ import pytest
 from src.models import Vacancy, VacancyList
 
 
-def test_vacancy_valid(vacancy) -> None:
+def test_vacancy_valid(vacancy: Vacancy) -> None:
     assert vacancy.vacancy_id == "124937232"
     assert vacancy.vacancy_url == "https://api.hh.ru/vacancies/124937232?host=hh.ru"
     assert vacancy.title == "Менеджер"
@@ -14,7 +14,7 @@ def test_vacancy_valid(vacancy) -> None:
     assert vacancy.salary_to == 150000
 
 
-def test_vacancy_invalid(vacancy) -> None:
+def test_vacancy_invalid(vacancy: Vacancy) -> None:
     with pytest.raises(AttributeError):
         vacancy.company_abc = 123
 
@@ -66,7 +66,7 @@ def test_vacancy_list_filter_by_salary(vacancy_list: VacancyList) -> None:
     assert (res1[0].salary_from, res1[0].salary_to) >= (50_000, 100_000)
 
 
-def test_vacancy_get_top_n():
+def test_vacancy_get_top_n() -> None:
     v1 = Vacancy(1, "", "Vacancy1", "", "Comp", "Moscow", 100000, 200000)
     v2 = Vacancy(2, "", "Vacancy2", "", "Comp", "Moscow", 120000, None)
     v3 = Vacancy(3, "", "Vacancy3", "", "Comp", "Moscow", None, 150_000)
