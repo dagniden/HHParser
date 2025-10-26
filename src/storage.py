@@ -2,6 +2,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 
+import psycopg2
 from loguru import logger
 
 from src.models import Vacancy, VacancyList
@@ -159,3 +160,97 @@ class JSONStorage(BaseStorage):
 
         logger.info(f"Создан VacancyList из {len(vacancies)} вакансий")
         return VacancyList(vacancies)
+
+
+class DBStorage(BaseStorage):
+
+    def __init__(self):
+        self.conn = psycopg2.connect(
+            host="localhost",
+            database="postgres",
+            user="postgres",
+            password="Dpiexmax1"
+        )
+
+        self.conn.autocommit = True
+        self._create_database("parser_db")
+
+        self.conn.close()
+
+        self.conn = psycopg2.connect(
+            host="localhost",
+            database="parser_db",
+            user="postgres",
+            password="Dpiexmax1"
+        )
+        self.conn.autocommit = True
+        self._create_tables()
+        self.conn.close()
+
+    def _create_database(self, db_name):
+        cursor = self.conn.cursor()
+        try:
+            cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", (db_name,))
+            if not cursor.fetchone():
+                cursor.execute(f"CREATE DATABASE {db_name}")
+        finally:
+            cursor.close()
+
+    def _create_tables(self):
+        cursor = self.conn.cursor()
+        query = """
+        DROP TABLE IF EXISTS companies CASCADE;
+        DROP TABLE IF EXISTS vacancies CASCADE;
+        
+        CREATE TABLE companies
+         (
+            company_id SERIAL,
+            company_name VARCHAR(255),
+            CONSTRAINT pk_companies_company_id PRIMARY KEY (company_id)
+        );
+        
+        INSERT INTO companies VALUES (1122462, 'Skyeng'); 	-- 1
+        INSERT INTO companies VALUES (15478, 'VK'); 		-- 2
+        INSERT INTO companies VALUES (11063264, 'Яндекс'); 	-- 3
+        INSERT INTO companies VALUES (681672, 'USETECH'); 	-- 4
+        INSERT INTO companies VALUES (2180, 'Ozon'); 		-- 5
+        INSERT INTO companies VALUES (3529, 'СБЕР'); 		-- 6
+        INSERT INTO companies VALUES (4309, 'Ингосстрах'); 	-- 7
+        INSERT INTO companies VALUES (5860936, 'Лоция'); 	-- 8
+        INSERT INTO companies VALUES (80, 'Альфа-Банк'); 	-- 9
+        INSERT INTO companies VALUES (3776, 'МТС'); 		-- 10
+        
+        CREATE TABLE vacancies
+        (
+            vacancy_id SERIAL,	        
+            vacancy_url TEXT,
+            title TEXT,
+            description TEXT,
+            company_id INT,
+            area_name VARCHAR(255),
+            salary_from DECIMAL,
+            salary_to DECIMAL,
+            CONSTRAINT fk_vacancies_company_id FOREIGN KEY (company_id) REFERENCES companies(company_id)
+        );
+        """
+        try:
+            cursor.execute(query)
+        finally:
+            cursor.close()
+
+
+    def create(self, vacancy: Vacancy) -> bool:
+        pass
+
+    def read(self) -> list:
+        pass
+
+    def update(self, vacancy: Vacancy) -> bool:
+        pass
+
+    def delete(self, vacancy: Vacancy) -> bool:
+        pass
+
+
+if __name__ == "__main__":
+    db = DBStorage()
