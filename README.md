@@ -439,7 +439,8 @@ CLI.display_vacancies(vacancy_list)
 
 - [x] Расширение архитектуры проекта на основе архитектуры HHParser
 - [x] DDL скрипт создания базы данных и таблиц companies и vacancies
-- [ ] Сделать заполнение vacancies c использованием per_page и page
+- [x] Сделано получение всех найденных вакансий по employer_id с пагинацией
+- [ ] Реализовать execute_query в DBStorage
 
 ## Чек-лист требований
 

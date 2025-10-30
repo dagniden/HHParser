@@ -7,6 +7,7 @@ import requests
 from loguru import logger
 
 from src.models import Vacancy, VacancyList
+from tests.conftest import vacancy_list
 
 # Конфигурация логгера
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -38,22 +39,35 @@ class HHClient(BaseVacancyAPI):
         if not self.__region_names:
             self.fetch_regions()
 
-    def fetch_vacancies(self, search_string: str, employer_id_list: list[int], region: int = 1, per_page: int = 100) -> VacancyList:
+    def fetch_vacancies(self, search_string: str, employer_id: int, region: int = 1,
+                        per_page: int = 100) -> VacancyList:
         """Получает список вакансий по ключевому слову и региону."""
+        total_data = []
 
-        params = {"text": search_string, "area": region, "per_page": per_page, "search_field": ["name", "description"]}
-        # todo: вставка параметров employer_id в запрос
-        # for i in employer_id_list:
-        #     params[""]
+        params = {"text": search_string,
+                  "area": region,
+                  "per_page": per_page,
+                  "employer_id": employer_id,
+                  "search_field": ["name", "description"]
+                  }
 
-        response = self.__make_request("/vacancies", params).get("items", [])
+        data = self.__make_request("/vacancies", params)
+        total_pages = data["pages"]
+        total_found = data["found"]
+        logger.debug(f"Всего найдено вакансий: {total_found}. Всего найдено страниц: {total_pages}.")
+        total_data.extend(data["items"])
 
-        logger.debug(f"Ответ от headhunter: {response}")
-        logger.debug(f"HHClient response length: {len(response)}")
+        for page in range(1, total_pages):
+            params["page"] = page
+            data = self.__make_request("/vacancies", params)
+            total_data.extend(data["items"])
+
+        logger.debug(f"Всего получено вакансий: {len(total_data)}")
+
 
         vacancy_list = VacancyList()
-        # [self.__parse_vacancy(vacancy) for vacancy in response]
-        for item in response:
+
+        for item in total_data:
             vacancy = self.parse_vacancy(item)
             vacancy_list.add(vacancy)
         return vacancy_list
@@ -120,3 +134,10 @@ class HHClient(BaseVacancyAPI):
                 region_names.update(children_names)
 
         return region_names
+
+
+if __name__ == "__main__":
+    hh = HHClient()
+    print(len(hh.region_names))
+    vacancy_list = hh.fetch_vacancies("", 15478)
+    print(len(vacancy_list))
