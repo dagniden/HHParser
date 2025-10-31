@@ -111,14 +111,17 @@ classDiagram
     }
 
     class DBStorage {
+        +connection_params: dict
+        +__init__()
+        -_get_connection() Connection
+        +initialize_database()$ void
+        -_create_tables(cursor)$ void
         +create(vacancy) bool
         +read() list
         +update(vacancy) bool
         +delete(vacancy) bool
-        +create_database() bool
-        +create_tables() bool
-        +execute_query() bool
-        +connect() bool
+        +execute_query(query, params) int
+        +fetch_query(query, params) list~dict~
     }
 
     class DBManager {
@@ -365,6 +368,86 @@ storage.delete(vacancy)
 
 ---
 
+### `DBStorage`
+
+Реализация хранилища данных в PostgreSQL с управлением соединениями и универсальными методами запросов.
+
+**Атрибуты:**
+
+- `connection_params: dict` — параметры подключения к БД parser_db
+
+**Методы:**
+
+- `__init__()`
+
+  Инициализирует хранилище с параметрами подключения к целевой БД `parser_db`.
+
+- `initialize_database()` *(classmethod)*
+
+  Создаёт БД и таблицы при первом запуске. Проверяет существование БД/таблиц перед созданием.
+  Вызывается один раз перед использованием DBStorage.
+
+- `fetch_query(query: str, params=None) -> list[dict]`
+
+  Выполняет SELECT запрос и возвращает результат в виде списка словарей.
+    - `query` — SQL запрос
+    - `params` — параметры для параметризованного запроса
+    - **Возвращает:** список словарей с именованными колонками
+
+- `execute_query(query: str, params=None) -> int`
+
+  Выполняет INSERT/UPDATE/DELETE запрос с автоматическим commit.
+    - `query` — SQL запрос
+    - `params` — параметры для параметризованного запроса
+    - **Возвращает:** количество затронутых строк
+
+- `create(vacancy: Vacancy) -> bool`
+
+  Добавляет вакансию в БД (наследуется от BaseStorage).
+
+- `read() -> list`
+
+  Читает все вакансии из БД (наследуется от BaseStorage).
+
+- `update(vacancy: Vacancy) -> bool`
+
+  Обновляет вакансию в БД (наследуется от BaseStorage).
+
+- `delete(vacancy: Vacancy) -> bool`
+
+  Удаляет вакансию из БД (наследуется от BaseStorage).
+
+**Пример использования:**
+
+```python
+from src.storage import DBStorage
+
+# Инициализация БД (один раз при первом запуске)
+DBStorage.initialize_database()
+
+# Создание хранилища
+db = DBStorage()
+
+# Получение списка employer_id
+employer_ids = db.fetch_query("SELECT company_id FROM companies")
+# [{"company_id": 1122462}, {"company_id": 15478}, ...]
+
+# Добавление вакансии
+query = """
+INSERT INTO vacancies (vacancy_url, title, description, company_id, area_name, salary_from, salary_to)
+VALUES (%s, %s, %s, %s, %s, %s, %s)
+"""
+affected = db.execute_query(query, (url, title, desc, company_id, area, sal_from, sal_to))
+
+# Поиск вакансий с зарплатой выше средней
+vacancies = db.fetch_query("""
+    SELECT * FROM vacancies
+    WHERE salary_from > (SELECT AVG(salary_from) FROM vacancies)
+""")
+```
+
+---
+
 ### `CLI`
 
 Класс для взаимодействия с пользователем через консоль (все методы статические).
@@ -442,7 +525,7 @@ CLI.display_vacancies(vacancy_list)
 - [x] Расширение архитектуры проекта на основе архитектуры HHParser
 - [x] DDL скрипт создания базы данных и таблиц companies и vacancies
 - [x] Сделано получение всех найденных вакансий по employer_id с пагинацией
-- [ ] Реализовать execute_query в DBStorage
+- [x] Реализовать execute_query в DBStorage
 
 ## Чек-лист требований
 

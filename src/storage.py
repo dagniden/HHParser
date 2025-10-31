@@ -3,6 +3,7 @@ import os
 from abc import ABC, abstractmethod
 
 import psycopg2
+from psycopg2.extras import RealDictCursor
 from loguru import logger
 
 from src.models import Vacancy, VacancyList
@@ -163,81 +164,114 @@ class JSONStorage(BaseStorage):
 
 
 class DBStorage(BaseStorage):
+    """Хранилище данных в PostgreSQL с управлением соединениями"""
 
     def __init__(self):
-        self.conn = psycopg2.connect(
-            host="localhost",
-            database="postgres",
-            user="postgres",
-            password="Dpiexmax1"
-        )
+        """Инициализация параметров подключения к целевой БД"""
+        self.connection_params = {
+            "host": "localhost",
+            "database": "parser_db",  # целевая БД
+            "user": "postgres",
+            "password": "Dpiexmax1"
+        }
+        logger.info("DBStorage инициализирован с параметрами подключения к parser_db")
 
-        self.conn.autocommit = True
-        self._create_database("parser_db")
+    def _get_connection(self):
+        """Создаёт новое соединение к БД"""
+        return psycopg2.connect(**self.connection_params)
 
-        self.conn.close()
+    @classmethod
+    def initialize_database(cls):
+        """
+        Инициализирует БД и таблицы при первом запуске.
+        Вызывается один раз перед использованием DBStorage.
+        """
+        logger.info("Начало инициализации базы данных")
 
-        self.conn = psycopg2.connect(
-            host="localhost",
-            database="parser_db",
-            user="postgres",
-            password="Dpiexmax1"
-        )
-        self.conn.autocommit = True
-        self._create_tables()
-        self.conn.close()
+        # Параметры для подключения к служебной БД
+        temp_params = {
+            "host": "localhost",
+            "database": "postgres",  # служебная БД
+            "user": "postgres",
+            "password": "Dpiexmax1"
+        }
 
-    def _create_database(self, db_name):
-        cursor = self.conn.cursor()
+        # Шаг 1: Создание БД parser_db если её нет
         try:
-            cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", (db_name,))
-            if not cursor.fetchone():
-                cursor.execute(f"CREATE DATABASE {db_name}")
-        finally:
-            cursor.close()
+            with psycopg2.connect(**temp_params) as conn:
+                conn.autocommit = True
+                with conn.cursor() as cursor:
+                    # Проверка существования БД
+                    cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", ("parser_db",))
+                    if not cursor.fetchone():
+                        cursor.execute("CREATE DATABASE parser_db")
+                        logger.info("База данных parser_db создана")
+                    else:
+                        logger.info("База данных parser_db уже существует")
+        except psycopg2.Error as e:
+            logger.error(f"Ошибка при создании БД: {e}")
+            raise
 
-    def _create_tables(self):
-        cursor = self.conn.cursor()
+        # Шаг 2: Создание таблиц в parser_db
+        target_params = {**temp_params, "database": "parser_db"}
+        try:
+            with psycopg2.connect(**target_params) as conn:
+                conn.autocommit = True
+                with conn.cursor() as cursor:
+                    # Проверка существования таблиц
+                    cursor.execute(
+                        "SELECT 1 FROM information_schema.tables WHERE table_name = 'companies'"
+                    )
+                    if not cursor.fetchone():
+                        cls._create_tables(cursor)
+                        logger.info("Таблицы созданы и заполнены начальными данными")
+                    else:
+                        logger.info("Таблицы уже существуют")
+        except psycopg2.Error as e:
+            logger.error(f"Ошибка при создании таблиц: {e}")
+            raise
+
+        logger.info("Инициализация базы данных завершена успешно")
+
+    @staticmethod
+    def _create_tables(cursor):
+        """Создаёт таблицы и заполняет начальными данными"""
         query = """
-        DROP TABLE IF EXISTS companies CASCADE;
         DROP TABLE IF EXISTS vacancies CASCADE;
-        
+        DROP TABLE IF EXISTS companies CASCADE;
+
         CREATE TABLE companies
-         (
-            company_id SERIAL,
-            company_name VARCHAR(255),
-            CONSTRAINT pk_companies_company_id PRIMARY KEY (company_id)
+        (
+            company_id INT PRIMARY KEY,
+            company_name VARCHAR(255) NOT NULL
         );
-        
-        INSERT INTO companies VALUES (1122462, 'Skyeng'); 	-- 1
-        INSERT INTO companies VALUES (15478, 'VK'); 		-- 2
-        INSERT INTO companies VALUES (11063264, 'Яндекс'); 	-- 3
-        INSERT INTO companies VALUES (681672, 'USETECH'); 	-- 4
-        INSERT INTO companies VALUES (2180, 'Ozon'); 		-- 5
-        INSERT INTO companies VALUES (3529, 'СБЕР'); 		-- 6
-        INSERT INTO companies VALUES (4309, 'Ингосстрах'); 	-- 7
-        INSERT INTO companies VALUES (5860936, 'Лоция'); 	-- 8
-        INSERT INTO companies VALUES (80, 'Альфа-Банк'); 	-- 9
-        INSERT INTO companies VALUES (3776, 'МТС'); 		-- 10
-        
+
+        INSERT INTO companies VALUES (1122462, 'Skyeng');
+        INSERT INTO companies VALUES (15478, 'VK');
+        INSERT INTO companies VALUES (11063264, 'Яндекс');
+        INSERT INTO companies VALUES (681672, 'USETECH');
+        INSERT INTO companies VALUES (2180, 'Ozon');
+        INSERT INTO companies VALUES (3529, 'СБЕР');
+        INSERT INTO companies VALUES (4309, 'Ингосстрах');
+        INSERT INTO companies VALUES (5860936, 'Лоция');
+        INSERT INTO companies VALUES (80, 'Альфа-Банк');
+        INSERT INTO companies VALUES (3776, 'МТС');
+
         CREATE TABLE vacancies
         (
-            vacancy_id SERIAL,	        
+            vacancy_id SERIAL PRIMARY KEY,
             vacancy_url TEXT,
-            title TEXT,
+            title TEXT NOT NULL,
             description TEXT,
-            company_id INT,
+            company_id INT NOT NULL,
             area_name VARCHAR(255),
             salary_from DECIMAL,
             salary_to DECIMAL,
-            CONSTRAINT fk_vacancies_company_id FOREIGN KEY (company_id) REFERENCES companies(company_id)
+            CONSTRAINT fk_vacancies_company_id FOREIGN KEY (company_id)
+                REFERENCES companies(company_id) ON DELETE CASCADE
         );
         """
-        try:
-            cursor.execute(query)
-        finally:
-            cursor.close()
-
+        cursor.execute(query)
 
     def create(self, vacancy: Vacancy) -> bool:
         pass
@@ -251,6 +285,61 @@ class DBStorage(BaseStorage):
     def delete(self, vacancy: Vacancy) -> bool:
         pass
 
+    def execute_query(self, query: str, params=None) -> int:
+        """
+        Выполняет запрос INSERT/UPDATE/DELETE и возвращает количество затронутых строк.
+
+        Args:
+            query: SQL запрос
+            params: Параметры для запроса (tuple или dict)
+
+        Returns:
+            Количество затронутых строк
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, params)
+                    conn.commit()
+                    affected_rows = cursor.rowcount
+                    logger.debug(f"Запрос выполнен, затронуто строк: {affected_rows}")
+                    return affected_rows
+        except psycopg2.Error as e:
+            logger.error(f"Ошибка выполнения запроса: {e}")
+            raise
+
+    def fetch_query(self, query: str, params=None) -> list[dict]:
+        """
+        Выполняет SELECT запрос и возвращает результат в виде списка словарей.
+
+        Args:
+            query: SQL запрос SELECT
+            params: Параметры для запроса (tuple или dict)
+
+        Returns:
+            Список словарей с результатами запроса
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute(query, params)
+                    result = cursor.fetchall()
+                    logger.debug(f"Запрос выполнен, получено строк: {len(result)}")
+                    return result
+        except psycopg2.Error as e:
+            logger.error(f"Ошибка выполнения запроса: {e}")
+            raise
+
 
 if __name__ == "__main__":
+    # Инициализация БД (вызывается один раз при первом запуске)
+    DBStorage.initialize_database()
+
+    # Обычное использование
     db = DBStorage()
+
+    # Пример использования fetch_query
+    companies = db.fetch_query("SELECT * FROM companies ORDER BY company_id")
+    print(f"Найдено компаний: {len(companies)}")
+    for company in companies:
+        print(f"  {company['company_id']}: {company['company_name']}")
