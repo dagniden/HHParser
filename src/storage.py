@@ -198,16 +198,16 @@ class DBStorage(BaseStorage):
 
         # Шаг 1: Создание БД parser_db если её нет
         try:
-            with psycopg2.connect(**temp_params) as conn:
-                conn.autocommit = True
-                with conn.cursor() as cursor:
-                    # Проверка существования БД
-                    cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", ("parser_db",))
-                    if not cursor.fetchone():
-                        cursor.execute("CREATE DATABASE parser_db")
-                        logger.info("База данных parser_db создана")
-                    else:
-                        logger.info("База данных parser_db уже существует")
+            conn = psycopg2.connect(**temp_params)
+            conn.autocommit = True
+            with conn.cursor() as cursor:
+                # Проверка существования БД
+                cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", ("parser_db",))
+                if not cursor.fetchone():
+                    cursor.execute("CREATE DATABASE parser_db")
+                    logger.info("База данных parser_db создана")
+                else:
+                    logger.info("База данных parser_db уже существует")
         except psycopg2.Error as e:
             logger.error(f"Ошибка при создании БД: {e}")
             raise
@@ -257,7 +257,8 @@ class DBStorage(BaseStorage):
 
         CREATE TABLE vacancies
         (
-            vacancy_id SERIAL PRIMARY KEY,
+            isn SERIAL PRIMARY KEY,
+            hh_id BIGINT UNIQUE NOT NULL,
             vacancy_url TEXT,
             title TEXT NOT NULL,
             description TEXT,

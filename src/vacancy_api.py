@@ -40,7 +40,7 @@ class HHClient(BaseVacancyAPI):
             self.fetch_regions()
 
     def fetch_vacancies(
-        self, search_string: str, employer_id: int, region: int = 1, per_page: int = 100
+        self, search_string: str, company_id: int, region: int = 1, per_page: int = 100
     ) -> VacancyList:
         """Получает список вакансий по ключевому слову и региону."""
         total_data = []
@@ -49,7 +49,7 @@ class HHClient(BaseVacancyAPI):
             "text": search_string,
             "area": region,
             "per_page": per_page,
-            "employer_id": employer_id,
+            "employer_id": company_id,
             "search_field": ["name", "description"],
         }
 
@@ -94,10 +94,10 @@ class HHClient(BaseVacancyAPI):
         """Парсит данные вакансии из ответа API в объект Vacancy."""
         logger.debug(f"Парсинг вакансии для добавления в VacancyList: {data}")
 
-        vacancy_id = data.get("id")
+        vacancy_id = int(data.get("id"))
         vacancy_url = str(data.get("alternate_url"))
         title = str(data.get("name"))
-        company_name = str((data.get("employer") or {}).get("name"))
+        company_id = int((data.get("employer") or {}).get("id"))
         area_name = str((data.get("area") or {}).get("name"))
         salary_from = (data.get("salary") or {}).get("from")
         salary_to = (data.get("salary") or {}).get("to")
@@ -106,7 +106,7 @@ class HHClient(BaseVacancyAPI):
         schedule = str((data.get("schedule") or {}).get("name"))
         description = f"{responsibility} {schedule}."
 
-        vacancy = Vacancy(vacancy_id, vacancy_url, title, description, company_name, area_name, salary_from, salary_to)
+        vacancy = Vacancy(vacancy_id, vacancy_url, title, description, company_id, area_name, salary_from, salary_to)
 
         logger.debug(f"Добавлена Vacancy: {vacancy}")
         return vacancy

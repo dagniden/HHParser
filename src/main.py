@@ -3,6 +3,7 @@ import os
 from loguru import logger
 
 from src.cli import CLI
+from src.db_manager import DBManager
 from src.storage import JSONStorage
 from src.vacancy_api import HHClient
 
@@ -26,6 +27,8 @@ def main() -> int:
     hh_client = HHClient()
     filename = os.path.join(current_dir, "..", "data", "vacancies.json")
     storage = JSONStorage(filename)
+    db_manager = DBManager()
+    companies_id = db_manager.get_companies_id()
 
     while True:
         choice = cli.show_menu()
@@ -44,22 +47,24 @@ def main() -> int:
             query = cli.ask_search_query()
             min_val, max_val = cli.ask_filter_range()
             top_n = cli.ask_top_n()
-            vacancy_list = hh_client.fetch_vacancies(query, region=region_id)
             filter_words = cli.ask_filter_by_word()
 
-            if filter_words:
-                vacancy_list.filter_by_words(filter_words)
+            for company_id in companies_id:
+                vacancy_list = hh_client.fetch_vacancies(query, company_id, region_id)
 
-            if min_val and max_val:
-                vacancy_list.filter_by_salary_range(min_val, max_val)
+                if filter_words:
+                    vacancy_list.filter_by_words(filter_words)
 
-            if top_n:
-                vacancy_list.get_top_n(top_n)
+                if min_val and max_val:
+                    vacancy_list.filter_by_salary_range(min_val, max_val)
 
-            for vacancy in vacancy_list:
-                storage.create(vacancy)
+                if top_n:
+                    vacancy_list.get_top_n(top_n)
 
-            cli.display_vacancies(vacancy_list.vacancies)
+                for vacancy in vacancy_list:
+                    storage.create(vacancy)
+
+                cli.display_vacancies(vacancy_list.vacancies)
 
         elif choice == "3. Выход":
             return 0

@@ -19,7 +19,7 @@ class Vacancy:
         "vacancy_url",
         "title",
         "description",
-        "company_name",
+        "company_id",
         "area_name",
         "salary_from",
         "salary_to",
@@ -27,11 +27,11 @@ class Vacancy:
 
     def __init__(
         self,
-        vacancy_id: Any,
+        vacancy_id: int,
         vacancy_url: str,
         title: str,
         description: str,
-        company_name: str,
+        company_id: int,
         area_name: str,
         salary_from: float | None,
         salary_to: float | None,
@@ -42,14 +42,14 @@ class Vacancy:
         self.vacancy_url = vacancy_url
         self.title = title
         self.description = description
-        self.company_name = company_name
+        self.company_id = company_id
         self.area_name = area_name
         self.salary_from = self.__validate_salary_from(salary_from)
         self.salary_to = self.__validate_salary_to(salary_to)
 
         logger.info(
             f"Вакансия создана: ID={vacancy_id}, Title='{title}', "
-            f"Salary={self.salary_from}-{self.salary_to}, Company='{company_name}'"
+            f"Salary={self.salary_from}-{self.salary_to}, Company='{company_id}'"
         )
 
     @staticmethod
@@ -72,7 +72,7 @@ class Vacancy:
         result = (
             f"Название вакансии: {self.title}\n"
             f"Описание вакансии: {self.description}\n"
-            f"Название компании: {self.company_name}\n"
+            f"ID компании: {self.company_id}\n"
             f"Зарплата: {self.salary_from}-{self.salary_to}\n"
             f"Регион: {self.area_name}\n"
             f"Ссылка на вакансию: {self.vacancy_url}\n"
