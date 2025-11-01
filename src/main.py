@@ -19,6 +19,7 @@ logger.remove()  # <- это убирает все существующие sink
 # Добавляем только файловый sink
 logger.add(sink=log_file, level="DEBUG")
 
+
 def main() -> int:
     """Координатор - связывает CLI"""
     cli = CLI()

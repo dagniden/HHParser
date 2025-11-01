@@ -39,17 +39,19 @@ class HHClient(BaseVacancyAPI):
         if not self.__region_names:
             self.fetch_regions()
 
-    def fetch_vacancies(self, search_string: str, employer_id: int, region: int = 1,
-                        per_page: int = 100) -> VacancyList:
+    def fetch_vacancies(
+        self, search_string: str, employer_id: int, region: int = 1, per_page: int = 100
+    ) -> VacancyList:
         """Получает список вакансий по ключевому слову и региону."""
         total_data = []
 
-        params = {"text": search_string,
-                  "area": region,
-                  "per_page": per_page,
-                  "employer_id": employer_id,
-                  "search_field": ["name", "description"]
-                  }
+        params = {
+            "text": search_string,
+            "area": region,
+            "per_page": per_page,
+            "employer_id": employer_id,
+            "search_field": ["name", "description"],
+        }
 
         data = self.__make_request("/vacancies", params)
         total_pages = data["pages"]
@@ -63,7 +65,6 @@ class HHClient(BaseVacancyAPI):
             total_data.extend(data["items"])
 
         logger.debug(f"Всего получено вакансий: {len(total_data)}")
-
 
         vacancy_list = VacancyList()
 

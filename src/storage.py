@@ -3,8 +3,8 @@ import os
 from abc import ABC, abstractmethod
 
 import psycopg2
-from psycopg2.extras import RealDictCursor
 from loguru import logger
+from psycopg2.extras import RealDictCursor
 
 from src.models import Vacancy, VacancyList
 
@@ -172,7 +172,7 @@ class DBStorage(BaseStorage):
             "host": "localhost",
             "database": "parser_db",  # целевая БД
             "user": "postgres",
-            "password": "Dpiexmax1"
+            "password": "Dpiexmax1",
         }
         logger.info("DBStorage инициализирован с параметрами подключения к parser_db")
 
@@ -193,7 +193,7 @@ class DBStorage(BaseStorage):
             "host": "localhost",
             "database": "postgres",  # служебная БД
             "user": "postgres",
-            "password": "Dpiexmax1"
+            "password": "Dpiexmax1",
         }
 
         # Шаг 1: Создание БД parser_db если её нет
@@ -219,9 +219,7 @@ class DBStorage(BaseStorage):
                 conn.autocommit = True
                 with conn.cursor() as cursor:
                     # Проверка существования таблиц
-                    cursor.execute(
-                        "SELECT 1 FROM information_schema.tables WHERE table_name = 'companies'"
-                    )
+                    cursor.execute("SELECT 1 FROM information_schema.tables WHERE table_name = 'companies'")
                     if not cursor.fetchone():
                         cls._create_tables(cursor)
                         logger.info("Таблицы созданы и заполнены начальными данными")
@@ -273,18 +271,6 @@ class DBStorage(BaseStorage):
         """
         cursor.execute(query)
 
-    def create(self, vacancy: Vacancy) -> bool:
-        pass
-
-    def read(self) -> list:
-        pass
-
-    def update(self, vacancy: Vacancy) -> bool:
-        pass
-
-    def delete(self, vacancy: Vacancy) -> bool:
-        pass
-
     def execute_query(self, query: str, params=None) -> int:
         """
         Выполняет запрос INSERT/UPDATE/DELETE и возвращает количество затронутых строк.
@@ -329,6 +315,18 @@ class DBStorage(BaseStorage):
         except psycopg2.Error as e:
             logger.error(f"Ошибка выполнения запроса: {e}")
             raise
+
+    def create(self, vacancy: Vacancy) -> bool:
+        pass
+
+    def read(self) -> list:
+        pass
+
+    def update(self, vacancy: Vacancy) -> bool:
+        pass
+
+    def delete(self, vacancy: Vacancy) -> bool:
+        pass
 
 
 if __name__ == "__main__":

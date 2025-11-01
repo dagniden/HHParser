@@ -21,5 +21,7 @@ class DBManager:
     def get_vacancies_with_keyword():
         pass
 
+
 if __name__ == "__main__":
     db_manager = DBManager()
+    db_manager.get_companies_and_vacancies_count()
