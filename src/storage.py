@@ -291,9 +291,12 @@ class DBStorage(BaseStorage):
                     affected_rows = cursor.rowcount
                     logger.debug(f"Запрос выполнен, затронуто строк: {affected_rows}")
                     return affected_rows
+        except psycopg2.IntegrityError as e:
+            logger.warning(f"Нарушено ограничение в базе данных: {e}")
         except psycopg2.Error as e:
             logger.error(f"Ошибка выполнения запроса: {e}")
             raise
+
 
     def fetch_query(self, query: str, params=None) -> list[dict]:
         """

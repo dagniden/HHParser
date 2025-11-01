@@ -68,15 +68,15 @@ classDiagram
     }
 
     class Vacancy {
-        +vacancy_id: str
+        +vacancy_id: int
         +vacancy_url: str
         +title: str
         +description: str
-        +company_name: str
+        +company_id: int
         +area_name: str
         +salary_from: float
         +salary_to: float
-        +__init__(vacancy_id, vacancy_url, title, description, company_name, area_name, salary_from, salary_to)
+        +__init__(vacancy_id, vacancy_url, title, description, company_id, area_name, salary_from, salary_to)
         -__validate_salary_from(value) float
         -__validate_salary_to(value) float
         +to_dict() dict
@@ -125,6 +125,10 @@ classDiagram
     }
 
     class DBManager {
+        +db: DBStorage
+        +__init__()
+        +get_companies_id() list~int~
+        +save_vacancies(vacancies) void
         +get_companies_and_vacancies_count()
         +get_all_vacancies()
         +get_avg_salary()
@@ -222,11 +226,11 @@ print(f"Найдено вакансий: {len(vacancies)}")
 
 | Атрибут        | Тип   | Описание                          |
 |----------------|-------|-----------------------------------|
-| `vacancy_id`   | str   | Уникальный идентификатор          |
+| `vacancy_id`   | int   | Уникальный идентификатор из HH    |
 | `vacancy_url`  | str   | Ссылка на вакансию                |
 | `title`        | str   | Название вакансии                 |
 | `description`  | str   | Краткое описание                  |
-| `company_name` | str   | Название компании                 |  
+| `company_id`   | int   | ID компании                       |
 | `area_name`    | str   | Регион                            |
 | `salary_from`  | float | Зарплата от (0 если не указана)   |
 | `salary_to`    | float | Зарплата до (inf если не указана) |
@@ -240,8 +244,8 @@ print(f"Найдено вакансий: {len(vacancies)}")
 **Пример использования:**
 
 ```python
-vacancy1 = Vacancy("123", "url1", "Python Dev", "desc", "Company A", "Moscow", 100000, 150000)
-vacancy2 = Vacancy("124", "url2", "Java Dev", "desc", "Company B", "SPb", 120000, 180000)
+vacancy1 = Vacancy(123, "url1", "Python Dev", "desc", 1122462, "Moscow", 100000, 150000)
+vacancy2 = Vacancy(124, "url2", "Java Dev", "desc", 15478, "SPb", 120000, 180000)
 
 print(vacancy1 < vacancy2)  # True (сравнение по зарплате)
 print(vacancy1.to_dict())  # Словарь для сохранения
@@ -351,7 +355,7 @@ from src.models import Vacancy
 storage = JSONStorage("my_vacancies.json")
 
 # Добавление
-vacancy = Vacancy("123", "url", "Title", "desc", "Company", "Moscow", 100000, 150000)
+vacancy = Vacancy(123, "url", "Title", "desc", 1122462, "Moscow", 100000, 150000)
 storage.create(vacancy)
 
 # Чтение
@@ -434,10 +438,10 @@ employer_ids = db.fetch_query("SELECT company_id FROM companies")
 
 # Добавление вакансии
 query = """
-INSERT INTO vacancies (vacancy_url, title, description, company_id, area_name, salary_from, salary_to)
-VALUES (%s, %s, %s, %s, %s, %s, %s)
+INSERT INTO vacancies (hh_id, vacancy_url, title, description, company_id, area_name, salary_from, salary_to)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 """
-affected = db.execute_query(query, (url, title, desc, company_id, area, sal_from, sal_to))
+affected = db.execute_query(query, (hh_id, url, title, desc, company_id, area, sal_from, sal_to))
 
 # Поиск вакансий с зарплатой выше средней
 vacancies = db.fetch_query("""

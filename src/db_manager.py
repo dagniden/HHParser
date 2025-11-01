@@ -14,33 +14,82 @@ logger.add(sink=log_file, level="DEBUG")
 
 
 class DBManager:
-    def __init__(self):
+    """Класс для бизнес-логики работы с базой данных вакансий"""
+
+    def __init__(self) -> None:
+        """Инициализирует DBManager, создает БД и таблицы если их нет"""
         DBStorage.initialize_database()
-        self.db = DBStorage()
+        self.db: DBStorage = DBStorage()
 
-    def get_companies_and_vacancies_count():
+    def get_companies_and_vacancies_count(self) -> list[dict]:
+        """
+        Получает список всех компаний и количество вакансий у каждой.
+
+        Returns:
+            Список словарей с полями company_name и vacancies_count
+        """
         pass
 
-    def get_all_vacancies():
+    def get_all_vacancies(self) -> list[dict]:
+        """
+        Получает список всех вакансий с информацией о компаниях.
+
+        Returns:
+            Список словарей с полями: company_name, title, salary_from, salary_to, vacancy_url
+        """
         pass
 
-    def get_avg_salary():
+    def get_avg_salary(self) -> float:
+        """
+        Вычисляет среднюю зарплату по всем вакансиям.
+
+        Returns:
+            Средняя зарплата (salary_from)
+        """
         pass
 
-    def get_vacancies_with_higher_salary():
+    def get_vacancies_with_higher_salary(self) -> list[dict]:
+        """
+        Получает список вакансий с зарплатой выше средней.
+
+        Returns:
+            Список словарей с информацией о вакансиях
+        """
         pass
 
-    def get_vacancies_with_keyword():
+    def get_vacancies_with_keyword(self, keyword: str) -> list[dict]:
+        """
+        Получает список вакансий, содержащих ключевое слово в названии.
+
+        Args:
+            keyword: Ключевое слово для поиска
+
+        Returns:
+            Список словарей с информацией о вакансиях
+        """
         pass
 
     def get_companies_id(self) -> list[int]:
-        """Получает список ID компаний"""
+        """
+        Получает список ID всех компаний из БД.
+
+        Returns:
+            Список идентификаторов компаний
+        """
         query = "select company_id from companies;"
         companies = self.db.fetch_query(query)
         return [company['company_id'] for company in companies]
 
-    def save_vacancies(self, vacancies: VacancyList):
-        """Сохраняет вакансии в базу данных"""
+    def save_vacancies(self, vacancies: VacancyList) -> None:
+        """
+        Сохраняет список вакансий в базу данных.
+
+        Args:
+            vacancies: Объект VacancyList с вакансиями для сохранения
+
+        Note:
+            Дубликаты (по hh_id) автоматически пропускаются с логированием warning
+        """
         for vacancy in vacancies:
             try:
                 params = (vacancy.vacancy_id,

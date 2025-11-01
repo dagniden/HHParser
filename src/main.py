@@ -15,7 +15,7 @@ log_file = os.path.join(log_dir, "main.log")
 logger.add(sink=log_file, level="DEBUG")
 
 # Удаляем стандартный консольный sink
-logger.remove()  # <- это убирает все существующие sinks, включая консоль
+logger.remove()
 
 # Добавляем только файловый sink
 logger.add(sink=log_file, level="DEBUG")
@@ -61,9 +61,7 @@ def main() -> int:
                 if top_n:
                     vacancy_list.get_top_n(top_n)
 
-                for vacancy in vacancy_list:
-                    storage.create(vacancy)
-
+                db_manager.save_vacancies(vacancy_list)
                 cli.display_vacancies(vacancy_list.vacancies)
 
         elif choice == "3. Выход":
