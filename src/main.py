@@ -26,7 +26,7 @@ def main() -> int:
     cli = CLI()
     hh_client = HHClient()
     filename = os.path.join(current_dir, "..", "data", "vacancies.json")
-    storage = JSONStorage(filename)
+    file_storage = JSONStorage(filename)
     db_manager = DBManager()
     companies_id = db_manager.get_companies_id()
 
@@ -34,7 +34,7 @@ def main() -> int:
         choice = cli.show_menu()
 
         if choice == "1. Показать сохраненные вакансии":
-            loaded_vacancies = storage.read_as_vacancy_list()
+            loaded_vacancies = file_storage.read_as_vacancy_list()
             top_n = cli.ask_top_n()
 
             if top_n:
@@ -63,6 +63,28 @@ def main() -> int:
 
                 db_manager.save_vacancies(vacancy_list)
                 cli.display_vacancies(vacancy_list.vacancies)
+
+        elif choice == "3. Показать список компаний в базе и количество вакансий у каждой":
+            res = db_manager.get_companies_and_vacancies_count()
+            for i in res:
+                print(i)
+
+        elif choice == "4. Показать среднюю зарплату по всем вакансиям":
+            res = db_manager.get_avg_salary()
+            for i in res:
+                print(i)
+
+        elif choice == "5. Показать вакансии с зарплатой выше средней":
+            res = db_manager.get_vacancies_with_higher_salary()
+            for i in res:
+                print(i)
+
+        elif choice == "6. Показать вакансии, содержащие ключевое слово в названии":
+            keyword = input("Введите ключевое слово для отбора: ")
+            res = db_manager.get_vacancies_with_keyword(keyword)
+            for i in res:
+                print(i)
+
 
         elif choice == "3. Выход":
             return 0
