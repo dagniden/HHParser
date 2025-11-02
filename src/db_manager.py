@@ -1,9 +1,10 @@
 import os
 
+from loguru import logger
+
 from src.models import VacancyList
 from src.storage import DBStorage
 from src.vacancy_api import HHClient
-from loguru import logger
 
 # Конфигурация логгера для файла
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,7 +29,17 @@ class DBManager:
         Returns:
             Список словарей с полями company_name и vacancies_count
         """
-        pass
+        query = """
+        select 
+            t1.company_name, 
+            count(t2.hh_id) 
+        from companies t1
+        left join vacancies t2 on t2.company_id = t1.company_id
+        group by t1.company_id
+        order by count(t2.hh_id) desc
+        """
+        result = self.db.fetch_query(query)
+        return result
 
     def get_all_vacancies(self) -> list[dict]:
         """
@@ -37,7 +48,18 @@ class DBManager:
         Returns:
             Список словарей с полями: company_name, title, salary_from, salary_to, vacancy_url
         """
-        pass
+        query = """
+        select 
+            t2.company_name, 
+            t1.title, 
+            t1.salary_from, 
+            t1.salary_to, 
+            t1.vacancy_url 
+        from vacancies t1
+        left join companies t2 on t2.company_id = t1.company_id
+        """
+        result = self.db.fetch_query(query)
+        return result
 
     def get_avg_salary(self) -> float:
         """
@@ -46,7 +68,29 @@ class DBManager:
         Returns:
             Средняя зарплата (salary_from)
         """
-        pass
+        query = """
+        select  
+	        round(
+	            avg(
+	                case 
+		                when salary_to = 'Infinity'::numeric
+		                then 
+			                case
+				                when salary_from <> 0
+				                then salary_from
+				            else 0
+			                end
+		                else salary_to
+	                end
+	                )
+	            , 2) as avg_salary
+        from vacancies
+        where 
+	        salary_to <> 'Infinity'::numeric
+	        or salary_from <> 0
+        """
+        result = self.db.fetch_query(query)
+        return result
 
     def get_vacancies_with_higher_salary(self) -> list[dict]:
         """
@@ -55,7 +99,29 @@ class DBManager:
         Returns:
             Список словарей с информацией о вакансиях
         """
-        pass
+        query = """
+        SELECT * 
+        FROM vacancies
+        WHERE 
+            salary_from > (
+                SELECT ROUND(AVG(CASE 
+                    WHEN salary_to = 'Infinity'::numeric
+                    THEN 
+                        CASE
+                            WHEN salary_from <> 0
+                            THEN salary_from
+                            ELSE 0
+                        END
+                    ELSE salary_to
+                END), 2)
+                FROM vacancies
+                WHERE 
+                    salary_to <> 'Infinity'::numeric
+                    OR salary_from <> 0
+            );
+        """
+        result = self.db.fetch_query(query)
+        return result
 
     def get_vacancies_with_keyword(self, keyword: str) -> list[dict]:
         """
@@ -67,7 +133,13 @@ class DBManager:
         Returns:
             Список словарей с информацией о вакансиях
         """
-        pass
+        query = f"""
+        select * 
+        from vacancies 
+        where lower(title) like '%{keyword}%'
+        """
+        result = self.db.fetch_query(query)
+        return result
 
     def get_companies_id(self) -> list[int]:
         """
@@ -78,7 +150,7 @@ class DBManager:
         """
         query = "select company_id from companies;"
         companies = self.db.fetch_query(query)
-        return [company['company_id'] for company in companies]
+        return [company["company_id"] for company in companies]
 
     def save_vacancies(self, vacancies: VacancyList) -> None:
         """
@@ -92,27 +164,32 @@ class DBManager:
         """
         for vacancy in vacancies:
             try:
-                params = (vacancy.vacancy_id,
-                          vacancy.vacancy_url,
-                          vacancy.title,
-                          vacancy.description,
-                          vacancy.company_id,
-                          vacancy.area_name,
-                          vacancy.salary_from,
-                          vacancy.salary_to)
+                params = (
+                    vacancy.vacancy_id,
+                    vacancy.vacancy_url,
+                    vacancy.title,
+                    vacancy.description,
+                    vacancy.company_id,
+                    vacancy.area_name,
+                    vacancy.salary_from,
+                    vacancy.salary_to,
+                )
 
                 query = "INSERT INTO vacancies (hh_id, vacancy_url, title, description, company_id, area_name, salary_from, salary_to) VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"
                 self.db.execute_query(query, params)
                 logger.debug(f"Сохранена вакансия: {vacancy.vacancy_id=} {vacancy.title=}")
             except Exception as e:
-                print(f"Ошибка при сохранении вакансии: {e}")
+                logger.warning(f"Ошибка при сохранении вакансии: {e}")
 
 
 if __name__ == "__main__":
     db_manager = DBManager()
-    result = db_manager.get_companies_id()
-    print(result)
-
-    hh = HHClient()
-    vacancy_list = hh.fetch_vacancies("", 15478, 1)
-    db_manager.save_vacancies(vacancy_list)
+    # result = db_manager.get_companies_id()
+    # print(result)
+    #
+    # hh = HHClient()
+    # vacancy_list = hh.fetch_vacancies("", 15478, 1)
+    # db_manager.save_vacancies(vacancy_list)
+    res = db_manager.get_vacancies_with_keyword("python")
+    for i in res:
+        print(i)

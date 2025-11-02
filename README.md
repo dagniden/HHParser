@@ -170,6 +170,88 @@ classDiagram
     CLI --> Vacancy: отображает
 ```
 
+Схема последовательности вызовов
+```mermaid
+sequenceDiagram
+    autonumber
+    participant main
+    participant cli as CLI
+    participant hhc as HHClient
+    participant dbm as DBManager
+    participant dbs as DBStorage
+    participant storage as JSONStorage
+    participant vlist as VacancyList
+    participant hh as HeadHunter API
+
+    %% Инициализация приложения
+    main ->> cli: CLI()
+    cli -->> main: CLI instance
+    main ->> hhc: HHClient()
+    hhc ->> hh: fetch_regions()
+    hh -->> hhc: regions data
+    hhc -->> main: HHClient instance
+    main ->> storage: JSONStorage(filename)
+    storage -->> main: JSONStorage instance
+    main ->> dbm: DBManager()
+    dbm ->> dbs: DBStorage()
+    dbs -->> dbm: DBStorage instance
+    dbm -->> main: DBManager instance
+    main ->> dbm: get_companies_id()
+    dbm ->> dbs: fetch_query("SELECT company_id...")
+    dbs -->> dbm: list[company_id]
+    dbm -->> main: companies_id
+
+    %% Основной цикл работы приложения
+    loop Main Menu Loop
+        main ->> cli: show_menu()
+        cli -->> main: user choice
+
+        alt Option 1: Показать сохраненные вакансии
+            main ->> storage: read_as_vacancy_list()
+            storage -->> main: VacancyList
+            main ->> cli: ask_top_n()
+            cli -->> main: top_n or None
+            opt top_n is provided
+                main ->> vlist: get_top_n(top_n)
+            end
+            main ->> cli: display_vacancies(vacancies)
+
+        else Option 2: Сделать новый поиск вакансий
+            main ->> cli:  Запросить параметры от пользователя
+            cli -->> main: region_id, query, min_val, max_val, top_n, filter_words
+            
+            loop Для каждого company_id
+                main ->> hhc: fetch_vacancies(query, company_id, region_id)
+                hhc ->> hh: GET /vacancies?employer_id=...
+                hh -->> hhc: return вакансия
+                hhc -->> main: VacancyList
+
+                opt filter_words получен от пользователя
+                    main ->> vlist: filter_by_words(filter_words)
+                end
+
+                opt salary range получен от пользователя
+                    main ->> vlist: filter_by_salary_range(min_val, max_val)
+                end
+
+                opt top_n получен от пользователя
+                    main ->> vlist: get_top_n(top_n)
+                end
+
+                main ->> dbm: save_vacancies(vacancy_list)
+                dbm ->> dbs: execute_query(INSERT...)
+                dbs -->> dbm: affected rows
+                dbm -->> main: void
+
+                main ->> cli: display_vacancies(vacancies)
+            end
+
+        else Option 3: Выход
+            main ->> main: return 0
+        end
+    end
+```
+
 ## API Reference
 
 ### Класс HHClient
@@ -531,8 +613,17 @@ CLI.display_vacancies(vacancy_list)
 - [x] Сделано получение всех найденных вакансий по employer_id с пагинацией
 - [x] Реализовать execute_query в DBStorage
 - [x] Реализовать получение employer_id из бд
-- [ ] Сделать получение вакансий компаний в main
-- [ ] Реализовать сохранение полученных вакансий в бд
+- [x] Встроить получение вакансий по компаниям из БД в main
+- [x] Встроить сохранение полученных вакансий в БД из main
+- [x] Добавить схему последовательности вызовов
+- [x] Добавить реализацию методов по ТЗ в DBManager
+- [ ] Добавить в CLI вызов новых методов DBManager и отображение результатов пользователю
+- [ ] Добавить автотесты
+- [ ] Актуализировать диаграмму классов
+- [ ] Актуализировать диаграмму последовательности
+- [ ] Актуализировать описание в README
+
+
 
 ## Чек-лист требований
 

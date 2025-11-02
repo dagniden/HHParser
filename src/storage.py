@@ -297,7 +297,6 @@ class DBStorage(BaseStorage):
             logger.error(f"Ошибка выполнения запроса: {e}")
             raise
 
-
     def fetch_query(self, query: str, params=None) -> list[dict]:
         """
         Выполняет SELECT запрос и возвращает результат в виде списка словарей.
