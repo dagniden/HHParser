@@ -4,8 +4,6 @@ from loguru import logger
 
 from src.cli import CLI
 from src.db_manager import DBManager
-from src.models import VacancyList, Vacancy
-from src.storage import JSONStorage
 from src.vacancy_api import HHClient
 
 # Конфигурация логгера для файла
@@ -26,8 +24,7 @@ def main() -> int:
     """Координатор - связывает CLI"""
     cli = CLI()
     hh_client = HHClient()
-    filename = os.path.join(current_dir, "..", "data", "vacancies.json")
-    file_storage = JSONStorage(filename)
+
     db_manager = DBManager()
     companies_id = db_manager.get_companies_id()
 

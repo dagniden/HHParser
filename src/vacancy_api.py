@@ -7,7 +7,6 @@ import requests
 from loguru import logger
 
 from src.models import Vacancy, VacancyList
-from tests.conftest import vacancy_list
 
 # Конфигурация логгера
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -136,9 +135,3 @@ class HHClient(BaseVacancyAPI):
 
         return region_names
 
-
-if __name__ == "__main__":
-    hh = HHClient()
-    print(len(hh.region_names))
-    vacancy_list = hh.fetch_vacancies("", 15478)
-    print(len(vacancy_list))

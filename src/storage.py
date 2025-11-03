@@ -1,6 +1,7 @@
 import json
 import os
 from abc import ABC, abstractmethod
+from configparser import ConfigParser
 
 import psycopg2
 from loguru import logger
@@ -168,13 +169,23 @@ class DBStorage(BaseStorage):
 
     def __init__(self):
         """Инициализация параметров подключения к целевой БД"""
-        self.connection_params = {
-            "host": "localhost",
-            "database": "parser_db",  # целевая БД
-            "user": "postgres",
-            "password": "Dpiexmax1",
-        }
+        self.connection_params = self._get_config("database.ini", "postgresql")
         logger.info("DBStorage инициализирован с параметрами подключения к parser_db")
+
+    @staticmethod
+    def _get_config(filename, section):
+        parser = ConfigParser()
+        # Вычисляем путь к файлу относительно этого модуля
+        config_path = os.path.join(os.path.dirname(__file__), filename)
+        parser.read(config_path)
+        db = {}
+        if parser.has_section(section):
+            params = parser.items(section)
+            for param in params:
+                db[param[0]] = param[1]
+        else:
+            raise Exception("Секция параметров подключения к базе данных не найдена")
+        return db
 
     def _get_connection(self):
         """Создаёт новое соединение к БД"""
@@ -189,12 +200,7 @@ class DBStorage(BaseStorage):
         logger.info("Начало инициализации базы данных")
 
         # Параметры для подключения к служебной БД
-        temp_params = {
-            "host": "localhost",
-            "database": "postgres",  # служебная БД
-            "user": "postgres",
-            "password": "Dpiexmax1",
-        }
+        temp_params = cls._get_config("database.ini", "postgresql_service")
 
         # Шаг 1: Создание БД parser_db если её нет
         try:

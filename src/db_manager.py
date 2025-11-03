@@ -136,9 +136,9 @@ class DBManager:
         query = f"""
         select * 
         from vacancies 
-        where lower(title) like '%{keyword}%'
+        where lower(title) like %s
         """
-        result = self.db.fetch_query(query)
+        result = self.db.fetch_query(query, (f"%{keyword}%",))
         return result
 
     def get_companies_id(self) -> list[int]:
