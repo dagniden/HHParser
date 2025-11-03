@@ -180,16 +180,3 @@ class DBManager:
                 logger.debug(f"Сохранена вакансия: {vacancy.vacancy_id=} {vacancy.title=}")
             except Exception as e:
                 logger.warning(f"Ошибка при сохранении вакансии: {e}")
-
-
-if __name__ == "__main__":
-    db_manager = DBManager()
-    # result = db_manager.get_companies_id()
-    # print(result)
-    #
-    # hh = HHClient()
-    # vacancy_list = hh.fetch_vacancies("", 15478, 1)
-    # db_manager.save_vacancies(vacancy_list)
-    res = db_manager.get_vacancies_with_keyword("python")
-    for i in res:
-        print(i)

@@ -150,7 +150,7 @@ class JSONStorage(BaseStorage):
                     vacancy_url=item.get("vacancy_url"),
                     title=item.get("title"),
                     description=item.get("description"),
-                    company_name=item.get("company_name"),
+                    company_id=item.get("company_id"),
                     area_name=item.get("area_name"),
                     salary_from=salary_from,
                     salary_to=salary_to,
@@ -330,17 +330,3 @@ class DBStorage(BaseStorage):
 
     def delete(self, vacancy: Vacancy) -> bool:
         pass
-
-
-if __name__ == "__main__":
-    # Инициализация БД (вызывается один раз при первом запуске)
-    DBStorage.initialize_database()
-
-    # Обычное использование
-    db = DBStorage()
-
-    # Пример использования fetch_query
-    companies = db.fetch_query("SELECT * FROM companies ORDER BY company_id")
-    print(f"Найдено компаний: {len(companies)}")
-    for company in companies:
-        print(f"  {company['company_id']}: {company['company_name']}")

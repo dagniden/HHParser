@@ -4,6 +4,7 @@ from loguru import logger
 
 from src.cli import CLI
 from src.db_manager import DBManager
+from src.models import VacancyList, Vacancy
 from src.storage import JSONStorage
 from src.vacancy_api import HHClient
 
@@ -34,13 +35,8 @@ def main() -> int:
         choice = cli.show_menu()
 
         if choice == "1. Показать сохраненные вакансии":
-            loaded_vacancies = file_storage.read_as_vacancy_list()
-            top_n = cli.ask_top_n()
-
-            if top_n:
-                loaded_vacancies.get_top_n(top_n)
-
-            cli.display_vacancies(loaded_vacancies.vacancies)
+            vacancies = db_manager.get_all_vacancies()
+            cli.display_db_results(vacancies)
 
         elif choice == "2. Сделать новый поиск вакансий":
             region_id = cli.ask_region_name(hh_client.region_names)
@@ -66,27 +62,22 @@ def main() -> int:
 
         elif choice == "3. Показать список компаний в базе и количество вакансий у каждой":
             res = db_manager.get_companies_and_vacancies_count()
-            for i in res:
-                print(i)
+            cli.display_db_results(res)
 
         elif choice == "4. Показать среднюю зарплату по всем вакансиям":
             res = db_manager.get_avg_salary()
-            for i in res:
-                print(i)
+            cli.display_db_results(res)
 
         elif choice == "5. Показать вакансии с зарплатой выше средней":
             res = db_manager.get_vacancies_with_higher_salary()
-            for i in res:
-                print(i)
+            cli.display_db_results(res)
 
         elif choice == "6. Показать вакансии, содержащие ключевое слово в названии":
             keyword = input("Введите ключевое слово для отбора: ")
             res = db_manager.get_vacancies_with_keyword(keyword)
-            for i in res:
-                print(i)
+            cli.display_db_results(res)
 
-
-        elif choice == "3. Выход":
+        elif choice == "7. Выход":
             return 0
 
 

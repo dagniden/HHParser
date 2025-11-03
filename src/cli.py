@@ -73,16 +73,16 @@ class CLI:
     @staticmethod
     def show_menu() -> str:
         print(
-            "\nДоступные действия: [1, 2, 3, 4, 5, 6]\n"
+            "\nДоступные действия: [1, 2, 3, 4, 5, 6, 7]\n"
             "1. Показать сохраненные вакансии\n"
             "2. Сделать новый поиск вакансий\n"
             "3. Показать список компаний в базе и количество вакансий у каждой\n"
             "4. Показать среднюю зарплату по всем вакансиям\n"
             "5. Показать вакансии с зарплатой выше средней\n"
             "6. Показать вакансии, содержащие ключевое слово в названии\n"
-            "Выход"
+            "7. Выход\n"
         )
-        result = CLI._get_user_choice("Ваш выбор: ", [1, 2, 3, 4, 5, 6])
+        result = CLI._get_user_choice("Ваш выбор: ", [1, 2, 3, 4, 5, 6, 7])
 
         if result == 1:
             return "1. Показать сохраненные вакансии"
@@ -97,7 +97,7 @@ class CLI:
         elif result == 6:
             return "6. Показать вакансии, содержащие ключевое слово в названии"
         else:
-            return "Выход"
+            return "7. Выход"
 
     @staticmethod
     def ask_region_name(region_names: dict) -> Any:
@@ -119,3 +119,12 @@ class CLI:
             return str(result).lower().split()
         else:
             return None
+
+    @staticmethod
+    def display_db_results(results: list[dict]) -> None:
+        """Отображение результатов запросов к БД в читаемом виде"""
+        print("-" * 50)
+        for row in results:
+            for key, value in row.items():
+                print(f"{key}: {value}")
+            print("-" * 50)
