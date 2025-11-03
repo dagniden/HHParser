@@ -773,6 +773,17 @@ socks = ["PySocks (>=1.5.6,!=1.5.7)"]
 use-chardet-on-py3 = ["chardet (>=3.0.2,<6)"]
 
 [[package]]
+name = "types-psycopg2"
+version = "2.9.21.20251012"
+description = "Typing stubs for psycopg2"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "types_psycopg2-2.9.21.20251012-py3-none-any.whl", hash = "sha256:712bad5c423fe979e357edbf40a07ca40ef775d74043de72bd4544ca328cc57e"},
+    {file = "types_psycopg2-2.9.21.20251012.tar.gz", hash = "sha256:4cdafd38927da0cfde49804f39ab85afd9c6e9c492800e42f1f0c1a1b0312935"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.15.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
@@ -817,4 +828,4 @@ dev = ["black (>=19.3b0)", "pytest (>=4.6.2)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.13"
-content-hash = "ac4ba44c1c443fb6311c5fc56cd5a6a591abb83728697d2e0baafe2ab8f9707f"
+content-hash = "fed2d1a3dfcd58930dbd511c563abd5685c0c81ccbd7b9716e273bea1fd664e2"

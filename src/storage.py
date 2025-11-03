@@ -2,6 +2,7 @@ import json
 import os
 from abc import ABC, abstractmethod
 from configparser import ConfigParser
+from typing import Any
 
 import psycopg2
 from loguru import logger
@@ -167,13 +168,13 @@ class JSONStorage(BaseStorage):
 class DBStorage(BaseStorage):
     """Хранилище данных в PostgreSQL с управлением соединениями"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Инициализация параметров подключения к целевой БД"""
         self.connection_params = self._get_config("database.ini", "postgresql")
         logger.info("DBStorage инициализирован с параметрами подключения к parser_db")
 
     @staticmethod
-    def _get_config(filename, section):
+    def _get_config(filename: str, section: str) -> dict[str, str]:
         parser = ConfigParser()
         # Вычисляем путь к файлу относительно этого модуля
         config_path = os.path.join(os.path.dirname(__file__), filename)
@@ -187,12 +188,12 @@ class DBStorage(BaseStorage):
             raise Exception("Секция параметров подключения к базе данных не найдена")
         return db
 
-    def _get_connection(self):
+    def _get_connection(self) -> Any:
         """Создаёт новое соединение к БД"""
         return psycopg2.connect(**self.connection_params)
 
     @classmethod
-    def initialize_database(cls):
+    def initialize_database(cls) -> None:
         """
         Инициализирует БД и таблицы при первом запуске.
         Вызывается один раз перед использованием DBStorage.
@@ -238,7 +239,7 @@ class DBStorage(BaseStorage):
         logger.info("Инициализация базы данных завершена успешно")
 
     @staticmethod
-    def _create_tables(cursor):
+    def _create_tables(cursor: Any) -> None:
         """Создаёт таблицы и заполняет начальными данными"""
         query = """
         DROP TABLE IF EXISTS vacancies CASCADE;
@@ -278,7 +279,7 @@ class DBStorage(BaseStorage):
         """
         cursor.execute(query)
 
-    def execute_query(self, query: str, params=None) -> int:
+    def execute_query(self, query: str, params: tuple[Any, ...] | dict[str, Any] | None = None) -> int:
         """
         Выполняет запрос INSERT/UPDATE/DELETE и возвращает количество затронутых строк.
 
@@ -296,14 +297,15 @@ class DBStorage(BaseStorage):
                     conn.commit()
                     affected_rows = cursor.rowcount
                     logger.debug(f"Запрос выполнен, затронуто строк: {affected_rows}")
-                    return affected_rows
+                    return int(affected_rows) if affected_rows else 0
         except psycopg2.IntegrityError as e:
             logger.warning(f"Нарушено ограничение в базе данных: {e}")
+            return 0
         except psycopg2.Error as e:
             logger.error(f"Ошибка выполнения запроса: {e}")
             raise
 
-    def fetch_query(self, query: str, params=None) -> list[dict]:
+    def fetch_query(self, query: str, params: tuple[Any, ...] | dict[str, Any] | None = None) -> list[dict[str, Any]]:
         """
         Выполняет SELECT запрос и возвращает результат в виде списка словарей.
 
@@ -320,19 +322,23 @@ class DBStorage(BaseStorage):
                     cursor.execute(query, params)
                     result = cursor.fetchall()
                     logger.debug(f"Запрос выполнен, получено строк: {len(result)}")
-                    return result
+                    return list(result) if result else []
         except psycopg2.Error as e:
             logger.error(f"Ошибка выполнения запроса: {e}")
             raise
 
     def create(self, vacancy: Vacancy) -> bool:
-        pass
+        """Метод для создания записи в БД (не используется напрямую)"""
+        return False
 
-    def read(self) -> list:
-        pass
+    def read(self) -> list[Any]:
+        """Метод для чтения записей из БД (не используется напрямую)"""
+        return []
 
     def update(self, vacancy: Vacancy) -> bool:
-        pass
+        """Метод для обновления записи в БД (не используется напрямую)"""
+        return False
 
     def delete(self, vacancy: Vacancy) -> bool:
-        pass
+        """Метод для удаления записи из БД (не используется напрямую)"""
+        return False

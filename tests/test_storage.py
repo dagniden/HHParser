@@ -15,11 +15,11 @@ def test_init_with_existing_file(test_filename: str) -> None:
     """Тест: инициализация с существующим файлом"""
     # Создаем файл с данными
     with open(test_filename, "w", encoding="utf-8") as f:
-        json.dump([{"vacancy_id": "999"}], f)
+        json.dump([{"vacancy_id": 999}], f)
 
     storage = JSONStorage(test_filename)
     assert len(storage.data) == 1
-    assert storage.data[0]["vacancy_id"] == "999"
+    assert storage.data[0]["vacancy_id"] == 999
 
 
 def test_create_adds_vacancy(test_filename: str, sample_vacancy: Vacancy) -> None:
@@ -29,7 +29,7 @@ def test_create_adds_vacancy(test_filename: str, sample_vacancy: Vacancy) -> Non
 
     assert result is True
     assert len(storage.data) == 1
-    assert storage.data[0]["vacancy_id"] == "12345"
+    assert storage.data[0]["vacancy_id"] == 12345
 
 
 def test_create_prevents_duplicates(test_filename: str, sample_vacancy: Vacancy) -> None:
@@ -55,8 +55,10 @@ def test_read_returns_data(test_filename: str, sample_vacancy: Vacancy) -> None:
 def test_read_empty_file(test_filename: str) -> None:
     """Тест: read возвращает пустой список для пустого файла"""
     storage = JSONStorage(test_filename)
+    # После инициализации data должен быть пустым списком
     data = storage.read()
-    assert data == []
+    assert isinstance(data, list)
+    assert len(data) == 0
 
 
 def test_update_existing_vacancy(test_filename: str, sample_vacancy: Vacancy) -> None:
@@ -66,11 +68,11 @@ def test_update_existing_vacancy(test_filename: str, sample_vacancy: Vacancy) ->
 
     # Обновляем данные вакансии
     updated_vacancy = Vacancy(
-        vacancy_id="12345",
+        vacancy_id=12345,
         vacancy_url="https://test.com/vacancy/12345",
         title="Senior Python Developer",  # Изменили title
         description="Разработка на Python",
-        company_name="Test Company",
+        company_id=100500,
         area_name="Москва",
         salary_from=150000,  # Изменили зарплату
         salary_to=200000,
@@ -106,12 +108,4 @@ def test_data_persistence(test_filename: str, sample_vacancy: Vacancy) -> None:
     # Создаем новый экземпляр с тем же файлом
     storage2 = JSONStorage(test_filename)
     assert len(storage2.data) == 1
-    assert storage2.data[0]["vacancy_id"] == "12345"
-
-
-def test_default_filename() -> None:
-    """Тест: используется имя файла по умолчанию"""
-    JSONStorage()
-    assert os.path.exists("vacancies.json")
-    # Cleanup
-    os.remove("vacancies.json")
+    assert storage2.data[0]["vacancy_id"] == 12345

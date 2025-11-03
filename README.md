@@ -1,11 +1,19 @@
 # Документация проекта: Агрегатор вакансий
 
-> Последнее обновление документации: 31 октября 2025
+> Последнее обновление документации: 03 ноября 2025
 
 ## Описание проекта
 
 Консольное приложение для поиска и управления вакансиями с платформы HeadHunter. Проект реализует паттерны
-проектирования для работы с внешними API, хранением данных и пользовательским интерфейсом.
+проектирования для работы с внешними API, хранением данных (JSON и PostgreSQL) и пользовательским интерфейсом.
+
+**Основные возможности:**
+- Поиск вакансий через API HeadHunter по 10 предустановленным компаниям
+- Фильтрация вакансий по зарплате, региону и ключевым словам
+- Сохранение вакансий в PostgreSQL базу данных
+- Аналитика: средняя зарплата, вакансии выше средней, поиск по ключевым словам
+- Безопасное хранение учетных данных БД в конфигурационном файле
+- Полное покрытие тестами (59 unit-тестов) и соответствие mypy
 
 ## Установка и запуск
 
@@ -16,9 +24,16 @@ git clone https://github.com/dagniden/HHParser.git
 # Установка зависимостей
 poetry install
 
+# Настройка базы данных
+# 1. Установите PostgreSQL
+# 2. Создайте файл src/database.ini на основе src/database.ini.example
+# 3. Укажите свои учетные данные PostgreSQL в database.ini
+
 # Запуск приложения
 python src/main.py
 ```
+
+**Примечание:** При первом запуске приложение автоматически создаст базу данных `parser_db` и необходимые таблицы.
 
 ## Архитектура проекта
 
@@ -31,13 +46,19 @@ src/
 ├── models.py          # Vacancy, VacancyList
 ├── storage.py         # BaseStorage, JSONStorage, DBStorage
 ├── db_manager.py      # DBManager - бизнес-логика для БД
-└── cli.py             # интерфейс пользователя
+├── cli.py             # интерфейс пользователя
+├── database.ini       # конфигурация подключения к БД (не в git)
+└── database.ini.example  # шаблон конфигурации для разработчиков
 
 tests/
-├── test_client.py
+├── conftest.py
+├── test_main.py
+├── test_cli.py
+├── test_vacancy_api.py
 ├── test_models.py
 ├── test_storage.py
-└── test_cli.py
+├── test_db_storage.py
+└── test_db_manager.py
 
 logs/
 ├── main.log
@@ -114,6 +135,7 @@ classDiagram
         +connection_params: dict
         +__init__()
         -_get_connection() Connection
+        -_get_config(filename, section)$ dict
         +initialize_database()$ void
         -_create_tables(cursor)$ void
         +create(vacancy) bool
@@ -154,9 +176,12 @@ classDiagram
         +ask_search_query() str
         +ask_top_n() int|None
         +ask_filter_range() tuple
-        -__get_user_input(message, input_type) int|str
-        -__get_user_choice(message, correct_choices) str
+        +ask_region_name(region_names) int
+        +ask_filter_by_word() list~str~|None
+        -_get_user_input(message, input_type) int|str
+        -_get_user_choice(message, correct_choices) str
         +display_vacancies(vacancies) None
+        +display_db_results(results) None
         +show_menu() str
     }
 
@@ -179,27 +204,18 @@ sequenceDiagram
     participant hhc as HHClient
     participant dbm as DBManager
     participant dbs as DBStorage
-    participant storage as JSONStorage
-    participant vlist as VacancyList
     participant hh as HeadHunter API
 
     %% Инициализация приложения
     main ->> cli: CLI()
-    cli -->> main: CLI instance
     main ->> hhc: HHClient()
     hhc ->> hh: fetch_regions()
     hh -->> hhc: regions data
-    hhc -->> main: HHClient instance
-    main ->> storage: JSONStorage(filename)
-    storage -->> main: JSONStorage instance
     main ->> dbm: DBManager()
     dbm ->> dbs: DBStorage()
-    dbs -->> dbm: DBStorage instance
-    dbm -->> main: DBManager instance
     main ->> dbm: get_companies_id()
     dbm ->> dbs: fetch_query("SELECT company_id...")
-    dbs -->> dbm: list[company_id]
-    dbm -->> main: companies_id
+    dbs -->> main: list[company_id]
 
     %% Основной цикл работы приложения
     loop Main Menu Loop
@@ -207,46 +223,53 @@ sequenceDiagram
         cli -->> main: user choice
 
         alt Option 1: Показать сохраненные вакансии
-            main ->> storage: read_as_vacancy_list()
-            storage -->> main: VacancyList
-            main ->> cli: ask_top_n()
-            cli -->> main: top_n or None
-            opt top_n is provided
-                main ->> vlist: get_top_n(top_n)
-            end
-            main ->> cli: display_vacancies(vacancies)
+            main ->> dbm: get_all_vacancies()
+            dbm ->> dbs: fetch_query(JOIN query)
+            dbs -->> main: list[dict]
+            main ->> cli: display_db_results(vacancies)
 
         else Option 2: Сделать новый поиск вакансий
-            main ->> cli:  Запросить параметры от пользователя
-            cli -->> main: region_id, query, min_val, max_val, top_n, filter_words
-            
+            main ->> cli: ask_region_name(), ask_search_query(), etc.
+            cli -->> main: parameters
+
             loop Для каждого company_id
                 main ->> hhc: fetch_vacancies(query, company_id, region_id)
                 hhc ->> hh: GET /vacancies?employer_id=...
-                hh -->> hhc: return вакансия
-                hhc -->> main: VacancyList
+                hh -->> main: VacancyList
 
-                opt filter_words получен от пользователя
-                    main ->> vlist: filter_by_words(filter_words)
-                end
-
-                opt salary range получен от пользователя
-                    main ->> vlist: filter_by_salary_range(min_val, max_val)
-                end
-
-                opt top_n получен от пользователя
-                    main ->> vlist: get_top_n(top_n)
-                end
+                Note over main: Применить фильтры (salary, words, top_n)
 
                 main ->> dbm: save_vacancies(vacancy_list)
                 dbm ->> dbs: execute_query(INSERT...)
-                dbs -->> dbm: affected rows
-                dbm -->> main: void
-
                 main ->> cli: display_vacancies(vacancies)
             end
 
-        else Option 3: Выход
+        else Option 3: Показать компании и количество вакансий
+            main ->> dbm: get_companies_and_vacancies_count()
+            dbm ->> dbs: fetch_query(JOIN + COUNT)
+            dbs -->> main: list[dict]
+            main ->> cli: display_db_results(results)
+
+        else Option 4: Показать среднюю зарплату
+            main ->> dbm: get_avg_salary()
+            dbm ->> dbs: fetch_query(AVG query)
+            dbs -->> main: list[dict]
+            main ->> cli: display_db_results(results)
+
+        else Option 5: Показать вакансии с зарплатой выше средней
+            main ->> dbm: get_vacancies_with_higher_salary()
+            dbm ->> dbs: fetch_query(WHERE > AVG)
+            dbs -->> main: list[dict]
+            main ->> cli: display_db_results(results)
+
+        else Option 6: Показать вакансии по ключевому слову
+            main ->> cli: input(keyword)
+            main ->> dbm: get_vacancies_with_keyword(keyword)
+            dbm ->> dbs: fetch_query(LIKE query)
+            dbs -->> main: list[dict]
+            main ->> cli: display_db_results(results)
+
+        else Option 7: Выход
             main ->> main: return 0
         end
     end
@@ -458,15 +481,33 @@ storage.delete(vacancy)
 
 Реализация хранилища данных в PostgreSQL с управлением соединениями и универсальными методами запросов.
 
+**Конфигурация:**
+
+Параметры подключения к БД хранятся в файле `src/database.ini`:
+
+```ini
+[postgresql]
+host=localhost
+database=parser_db
+user=postgres
+password=YOUR_PASSWORD
+
+[postgresql_service]
+host=localhost
+database=postgres
+user=postgres
+password=YOUR_PASSWORD
+```
+
 **Атрибуты:**
 
-- `connection_params: dict` — параметры подключения к БД parser_db
+- `connection_params: dict` — параметры подключения к БД parser_db (загружаются из database.ini)
 
 **Методы:**
 
 - `__init__()`
 
-  Инициализирует хранилище с параметрами подключения к целевой БД `parser_db`.
+  Инициализирует хранилище с параметрами подключения к целевой БД `parser_db`. Параметры читаются из `database.ini`.
 
 - `initialize_database()` *(classmethod)*
 
@@ -534,6 +575,87 @@ vacancies = db.fetch_query("""
 
 ---
 
+### `DBManager`
+
+Класс для управления бизнес-логикой работы с базой данных. Предоставляет высокоуровневые методы для выполнения типовых запросов к БД.
+
+**Атрибуты:**
+
+- `db: DBStorage` — экземпляр класса DBStorage для работы с базой данных
+
+**Методы:**
+
+- `__init__()`
+
+  Инициализирует DBManager с экземпляром DBStorage.
+
+- `get_companies_id() -> list[int]`
+
+  Получает список ID всех компаний из таблицы companies.
+  - **Возвращает:** список идентификаторов компаний
+
+- `save_vacancies(vacancies: VacancyList) -> None`
+
+  Сохраняет список вакансий в базу данных. Использует INSERT для добавления новых записей.
+
+- `get_companies_and_vacancies_count() -> list[dict[str, Any]]`
+
+  Получает список компаний и количество вакансий у каждой через JOIN запрос.
+  - **Возвращает:** список словарей с полями company_name и vacancies_count
+
+- `get_all_vacancies() -> list[dict[str, Any]]`
+
+  Получает все вакансии с информацией о компаниях через JOIN запрос.
+  - **Возвращает:** список словарей с полями company_name, title, salary_from, salary_to, vacancy_url
+
+- `get_avg_salary() -> list[dict[str, Any]]`
+
+  Вычисляет среднюю зарплату по всем вакансиям через функцию AVG.
+  - **Возвращает:** список с одним элементом, содержащим avg_salary
+
+- `get_vacancies_with_higher_salary() -> list[dict[str, Any]]`
+
+  Получает вакансии с зарплатой выше средней через подзапрос WHERE > AVG.
+  - **Возвращает:** список словарей с информацией о вакансиях
+
+- `get_vacancies_with_keyword(keyword: str) -> list[dict[str, Any]]`
+
+  Получает вакансии, содержащие ключевое слово в названии через оператор LIKE.
+  - `keyword` — ключевое слово для поиска (регистронезависимый)
+  - **Возвращает:** список словарей с информацией о вакансиях
+
+**Пример использования:**
+
+```python
+from src.db_manager import DBManager
+
+# Создание менеджера
+manager = DBManager()
+
+# Получение списка ID компаний
+companies = manager.get_companies_id()
+# [1122462, 15478, ...]
+
+# Сохранение вакансий
+manager.save_vacancies(vacancy_list)
+
+# Получение статистики по компаниям
+stats = manager.get_companies_and_vacancies_count()
+# [{"company_name": "Яндекс", "vacancies_count": 42}, ...]
+
+# Получение средней зарплаты
+avg_salary = manager.get_avg_salary()
+# [{"avg_salary": 150000.0}]
+
+# Получение вакансий выше средней зарплаты
+high_salary_vacancies = manager.get_vacancies_with_higher_salary()
+
+# Поиск вакансий по ключевому слову
+python_vacancies = manager.get_vacancies_with_keyword("python")
+```
+
+---
+
 ### `CLI`
 
 Класс для взаимодействия с пользователем через консоль (все методы статические).
@@ -552,25 +674,43 @@ vacancies = db.fetch_query("""
 
   Спрашивает о фильтрации по зарплате. Возвращает кортеж `(min_val, max_val)` или `(None, None)`.
 
+- `ask_region_name(region_names: dict[str, int]) -> int`
+
+  Запрашивает у пользователя название региона и возвращает его ID из справочника.
+
+- `ask_filter_by_word() -> list[str] | None`
+
+  Спрашивает, нужно ли фильтровать вакансии по ключевым словам. Возвращает список слов или `None`.
+
 - `display_vacancies(vacancies: list[Vacancy]) -> None`
 
-  Выводит список вакансий в консоль.
+  Выводит список вакансий (объекты Vacancy) в консоль.
+
+- `display_db_results(results: list[dict[str, Any]]) -> None`
+
+  Выводит результаты запросов к БД в читаемом формате (списки словарей).
 
 - `show_menu() -> str`
 
-  Показывает главное меню и возвращает выбранный пункт в виде строки.
+  Показывает главное меню с 7 пунктами и возвращает выбранный пункт в виде строки.
 
 **Пример использования:**
 
 ```python
 from src.cli import CLI
 
+# Запрос параметров поиска
 query = CLI.ask_search_query()
+region_id = CLI.ask_region_name({"Москва": 1, "Санкт-Петербург": 2})
 top_n = CLI.ask_top_n()
 min_sal, max_sal = CLI.ask_filter_range()
+filter_words = CLI.ask_filter_by_word()
 
 # Отображение результатов
 CLI.display_vacancies(vacancy_list)
+
+# Отображение результатов из БД
+CLI.display_db_results(db_results)
 ```
 
 ---
@@ -579,8 +719,12 @@ CLI.display_vacancies(vacancy_list)
 
 - Все методы фильтрации в `VacancyList` изменяют объект **in-place** и возвращают `self` для поддержки цепочки вызовов
 - `JSONStorage` автоматически создает файл при инициализации
+- `DBStorage` использует параметризованные запросы для защиты от SQL-инъекций
+- `DBManager` предоставляет высокоуровневый интерфейс для типовых SQL-запросов (JOIN, AVG, LIKE)
 - Класс `Vacancy` использует `__slots__` для оптимизации памяти
 - Все модули поддерживают логирование через `loguru`
+- База данных создается автоматически при первом запуске приложения
+- Учетные данные БД хранятся в `database.ini` (не включен в git)
 
 ## Логирование
 
@@ -619,10 +763,10 @@ CLI.display_vacancies(vacancy_list)
 - [x] Добавить реализацию требуемых методов в DBManager
 - [x] Добавить в CLI вызов новых методов DBManager 
 - [x] Добавить в CLI метод отображения результатов из БД
-- [ ] Добавить автотесты
-- [ ] Актуализировать диаграмму классов
-- [ ] Актуализировать диаграмму последовательности
-- [ ] Актуализировать описание в README
+- [x] Добавить автотесты
+- [x] Актуализировать диаграмму классов
+- [x] Актуализировать диаграмму последовательности
+- [x] Актуализировать описание в README
 
 
 
@@ -640,8 +784,8 @@ CLI.display_vacancies(vacancy_list)
 - [x] В проекте есть «точка входа» — модуль, запустив который можно получить результат всех реализованных в проекте
   функциональностей.
 - [x] Классы соответствуют минимум первым двум принципам SOLID.
-- [ ] Все классы задокументированы.
-- [ ] Все методы классов задокументированы.
+- [x] Все классы задокументированы.
+- [x] Все методы классов задокументированы.
 - [x] Все методы классов типизированы.
 
 ### Работа по созданию базы данных и таблиц
@@ -653,7 +797,7 @@ CLI.display_vacancies(vacancy_list)
 - [x] Создается таблица для организаций.
 - [x] Создается таблица для вакансий.
 - [x] Таблица вакансий связана с таблицей организаций через FK.
-- [ ] Использованы средства скрытия данных для доступа к БД.
+- [x] Использованы средства скрытия данных для доступа к БД.
 
 ### Заполнение данных
 
@@ -674,7 +818,7 @@ CLI.display_vacancies(vacancy_list)
 - [x] В методе используется SQL-запрос, выводящий информацию о средней зарплате через фильтрацию WHERE.
 - [x] Реализован метод получения списка всех вакансий, в названии которых содержатся переданные в метод слова, например
   python.
-- [ ] В методе используется SQL-запрос, выводящий список всех вакансий, в названии которых содержатся переданные в метод
+- [x] В методе используется SQL-запрос, выводящий список всех вакансий, в названии которых содержатся переданные в метод
   слова через оператор LIKE.
 
 ### Интерфейс управления
@@ -689,11 +833,12 @@ CLI.display_vacancies(vacancy_list)
 ### Тестирование
 
 - [x] Написаны тесты для функциональностей проекта.
-- [ ] Общее покрытие функционального кода — более 70%.
+- [x] Общее покрытие функционального кода — более 70%.
 
 ## Зависимости
 
 ```
 requests>=2.31.0
 loguru>=0.7.0
+psycopg2>=2.9.0
 ```

@@ -22,7 +22,9 @@ class BaseVacancyAPI(ABC):
     BASE_URL: str
 
     @abstractmethod
-    def fetch_vacancies(self, search_string: str, region: int) -> VacancyList:
+    def fetch_vacancies(
+        self, search_string: str, company_id: int, region: int = 1, per_page: int = 100
+    ) -> VacancyList:
         """Получает список вакансий по поисковой строке и региону."""
         pass
 
@@ -31,7 +33,7 @@ class HHClient(BaseVacancyAPI):
     """Клиент для работы с API HeadHunter."""
 
     BASE_URL = "https://api.hh.ru"
-    __region_names: dict = {}
+    __region_names: dict[str, int] = {}
 
     def __init__(self) -> None:
         """Инициализирует клиент и загружает справочник регионов."""
@@ -42,7 +44,7 @@ class HHClient(BaseVacancyAPI):
         self, search_string: str, company_id: int, region: int = 1, per_page: int = 100
     ) -> VacancyList:
         """Получает список вакансий по ключевому слову и региону."""
-        total_data = []
+        total_data: list[dict[str, Any]] = []
 
         params = {
             "text": search_string,
@@ -73,15 +75,15 @@ class HHClient(BaseVacancyAPI):
         return vacancy_list
 
     @property
-    def region_names(self) -> dict:
+    def region_names(self) -> dict[str, int]:
         """Геттер справочника регионов."""
         return self.__region_names
 
     @staticmethod
-    def __make_request(endpoint: str, params: dict = {}) -> Any:
+    def __make_request(endpoint: str, params: dict[str, Any] | None = None) -> Any:
         """Выполняет HTTP-запрос к API HeadHunter."""
         url = f"{HHClient.BASE_URL}{endpoint}"
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params if params is not None else {})
 
         if response.status_code != 200:
             raise Exception(f"API request failed: {response.status_code}, {response.text}")
@@ -93,10 +95,10 @@ class HHClient(BaseVacancyAPI):
         """Парсит данные вакансии из ответа API в объект Vacancy."""
         logger.debug(f"Парсинг вакансии для добавления в VacancyList: {data}")
 
-        vacancy_id = int(data.get("id"))
-        vacancy_url = str(data.get("alternate_url"))
-        title = str(data.get("name"))
-        company_id = int((data.get("employer") or {}).get("id"))
+        vacancy_id = int(data.get("id", 0))
+        vacancy_url = str(data.get("alternate_url", ""))
+        title = str(data.get("name", ""))
+        company_id = int((data.get("employer") or {}).get("id", 0))
         area_name = str((data.get("area") or {}).get("name"))
         salary_from = (data.get("salary") or {}).get("from")
         salary_to = (data.get("salary") or {}).get("to")
@@ -123,9 +125,9 @@ class HHClient(BaseVacancyAPI):
         cls.__region_names = regions
 
     @staticmethod
-    def parse_regions(data: list[dict]) -> dict:
+    def parse_regions(data: list[dict[str, Any]]) -> dict[str, int]:
         """Рекурсивно парсит иерархическую структуру регионов в плоский словарь."""
-        region_names = {}
+        region_names: dict[str, int] = {}
         for item in data:
             region_names[item["name"]] = int(item["id"])
 
@@ -134,4 +136,3 @@ class HHClient(BaseVacancyAPI):
                 region_names.update(children_names)
 
         return region_names
-

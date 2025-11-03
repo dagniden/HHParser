@@ -1,5 +1,5 @@
 import os
-from typing import Any, Iterator, Optional
+from typing import Iterator, Optional
 
 from loguru import logger
 
@@ -53,7 +53,7 @@ class Vacancy:
         )
 
     @staticmethod
-    def __validate_salary_from(value: float) -> float:
+    def __validate_salary_from(value: float | None) -> float:
         if value is None or value < 0:
             logger.debug(f"Валидация salary_from: {value} -> 0")
             return 0
@@ -61,7 +61,7 @@ class Vacancy:
         return value
 
     @staticmethod
-    def __validate_salary_to(value: float) -> float:
+    def __validate_salary_to(value: float | None) -> float:
         if value is None or value < 0:
             logger.debug(f"Валидация salary_to: {value} -> inf")
             return float("inf")

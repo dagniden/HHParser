@@ -1,10 +1,10 @@
 import os
+from typing import Any
 
 from loguru import logger
 
 from src.models import VacancyList
 from src.storage import DBStorage
-from src.vacancy_api import HHClient
 
 # Конфигурация логгера для файла
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -30,9 +30,9 @@ class DBManager:
             Список словарей с полями company_name и vacancies_count
         """
         query = """
-        select 
-            t1.company_name, 
-            count(t2.hh_id) 
+        select
+            t1.company_name,
+            count(t2.hh_id)
         from companies t1
         left join vacancies t2 on t2.company_id = t1.company_id
         group by t1.company_id
@@ -49,19 +49,19 @@ class DBManager:
             Список словарей с полями: company_name, title, salary_from, salary_to, vacancy_url
         """
         query = """
-        select 
-            t2.company_name, 
-            t1.title, 
-            t1.salary_from, 
-            t1.salary_to, 
-            t1.vacancy_url 
+        select
+            t2.company_name,
+            t1.title,
+            t1.salary_from,
+            t1.salary_to,
+            t1.vacancy_url
         from vacancies t1
         left join companies t2 on t2.company_id = t1.company_id
         """
         result = self.db.fetch_query(query)
         return result
 
-    def get_avg_salary(self) -> float:
+    def get_avg_salary(self) -> list[dict[str, Any]]:
         """
         Вычисляет среднюю зарплату по всем вакансиям.
 
@@ -69,25 +69,25 @@ class DBManager:
             Средняя зарплата (salary_from)
         """
         query = """
-        select  
-	        round(
-	            avg(
-	                case 
-		                when salary_to = 'Infinity'::numeric
-		                then 
-			                case
-				                when salary_from <> 0
-				                then salary_from
-				            else 0
-			                end
-		                else salary_to
-	                end
-	                )
-	            , 2) as avg_salary
+        select
+            round(
+                avg(
+                    case
+                        when salary_to = 'Infinity'::numeric
+                        then
+                            case
+                                when salary_from <> 0
+                                then salary_from
+                            else 0
+                            end
+                        else salary_to
+                    end
+                    )
+                , 2) as avg_salary
         from vacancies
-        where 
-	        salary_to <> 'Infinity'::numeric
-	        or salary_from <> 0
+        where
+            salary_to <> 'Infinity'::numeric
+            or salary_from <> 0
         """
         result = self.db.fetch_query(query)
         return result
@@ -100,13 +100,13 @@ class DBManager:
             Список словарей с информацией о вакансиях
         """
         query = """
-        SELECT * 
+        SELECT *
         FROM vacancies
-        WHERE 
+        WHERE
             salary_from > (
-                SELECT ROUND(AVG(CASE 
+                SELECT ROUND(AVG(CASE
                     WHEN salary_to = 'Infinity'::numeric
-                    THEN 
+                    THEN
                         CASE
                             WHEN salary_from <> 0
                             THEN salary_from
@@ -115,7 +115,7 @@ class DBManager:
                     ELSE salary_to
                 END), 2)
                 FROM vacancies
-                WHERE 
+                WHERE
                     salary_to <> 'Infinity'::numeric
                     OR salary_from <> 0
             );
@@ -133,9 +133,9 @@ class DBManager:
         Returns:
             Список словарей с информацией о вакансиях
         """
-        query = f"""
-        select * 
-        from vacancies 
+        query = """
+        select *
+        from vacancies
         where lower(title) like %s
         """
         result = self.db.fetch_query(query, (f"%{keyword}%",))

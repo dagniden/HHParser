@@ -4,11 +4,11 @@ from src.models import Vacancy, VacancyList
 
 
 def test_vacancy_valid(vacancy: Vacancy) -> None:
-    assert vacancy.vacancy_id == "124937232"
+    assert vacancy.vacancy_id == 124937232
     assert vacancy.vacancy_url == "https://api.hh.ru/vacancies/124937232?host=hh.ru"
     assert vacancy.title == "Менеджер"
     assert vacancy.description == "Ставить задачи, сопровождать и контролировать их выполнение . Удаленная работа."
-    assert vacancy.company_name == "Е-Клиник"
+    assert vacancy.company_id == 100500
     assert vacancy.area_name == "Москва"
     assert vacancy.salary_from == 125000
     assert vacancy.salary_to == 150000
@@ -39,9 +39,9 @@ def test_vacancy_str(vacancy: Vacancy) -> None:
 
 
 def test_vacancy_comparison() -> None:
-    v1 = Vacancy(1, "", "Vacancy1", "", "Comp", "Moscow", 100000, 200000)
-    v2 = Vacancy(2, "", "Vacancy2", "", "Comp", "Moscow", 120000, None)
-    v3 = Vacancy(3, "", "Vacancy3", "", "Comp", "Moscow", None, 150000)
+    v1 = Vacancy(1, "", "Vacancy1", "", 100500, "Moscow", 100000, 200000)
+    v2 = Vacancy(2, "", "Vacancy2", "", 100500, "Moscow", 120000, None)
+    v3 = Vacancy(3, "", "Vacancy3", "", 100500, "Moscow", None, 150000)
 
     assert v1 < v2
     assert v3 < v1
@@ -67,11 +67,11 @@ def test_vacancy_list_filter_by_salary(vacancy_list: VacancyList) -> None:
 
 
 def test_vacancy_get_top_n() -> None:
-    v1 = Vacancy(1, "", "Vacancy1", "", "Comp", "Moscow", 100000, 200000)
-    v2 = Vacancy(2, "", "Vacancy2", "", "Comp", "Moscow", 120000, None)
-    v3 = Vacancy(3, "", "Vacancy3", "", "Comp", "Moscow", None, 150_000)
-    v4 = Vacancy(4, "", "Vacancy3", "", "Comp", "Moscow", None, 180_000)
-    v5 = Vacancy(5, "", "Vacancy3", "", "Comp", "Moscow", None, 200_000)
+    v1 = Vacancy(1, "", "Vacancy1", "", 100500, "Moscow", 100000, 200000)
+    v2 = Vacancy(2, "", "Vacancy2", "", 100500, "Moscow", 120000, None)
+    v3 = Vacancy(3, "", "Vacancy3", "", 100500, "Moscow", None, 150_000)
+    v4 = Vacancy(4, "", "Vacancy3", "", 100500, "Moscow", None, 180_000)
+    v5 = Vacancy(5, "", "Vacancy3", "", 100500, "Moscow", None, 200_000)
     vacancy_list1 = VacancyList([v1, v2, v3, v4, v5])
 
     top_vacancies = vacancy_list1.get_top_n(2)
