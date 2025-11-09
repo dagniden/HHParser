@@ -12,7 +12,7 @@ def mock_vacancy_data() -> dict:
         "id": "123",
         "name": "Python Developer",
         "alternate_url": "https://hh.ru/vacancy/123",
-        "employer": {"name": "TechCorp"},
+        "employer": {"id": "100500", "name": "TechCorp"},
         "area": {"name": "Москва"},
         "salary": {"from": 100000, "to": 200000},
         "snippet": {"responsibility": "Разработка", "requirement": "Python"},
@@ -34,20 +34,20 @@ def mock_region_data() -> list:
     ]
 
 
-def test_parse_vacancy(mock_vacancy_data: MagicMock) -> None:
+def test_parse_vacancy(mock_vacancy_data: dict) -> None:
     """Проверяем корректность парсинга одной вакансии"""
     vacancy = HHClient.parse_vacancy(mock_vacancy_data)
     assert isinstance(vacancy, Vacancy)
-    assert vacancy.vacancy_id == "123"
+    assert vacancy.vacancy_id == 123
     assert vacancy.title == "Python Developer"
-    assert vacancy.company_name == "TechCorp"
+    assert vacancy.company_id == 100500
     assert vacancy.area_name == "Москва"
     assert vacancy.salary_from == 100000
     assert vacancy.salary_to == 200000
     assert "Полный день" in vacancy.description
 
 
-def test_parse_regions(mock_region_data: MagicMock) -> None:
+def test_parse_regions(mock_region_data: list) -> None:
     """Проверяем, что регионы парсятся в плоский словарь"""
     regions = HHClient.parse_regions(mock_region_data)
     assert isinstance(regions, dict)
@@ -57,7 +57,7 @@ def test_parse_regions(mock_region_data: MagicMock) -> None:
 
 
 @patch("src.vacancy_api.HHClient._HHClient__make_request")
-def test_fetch_regions(mock_request: MagicMock, mock_region_data: MagicMock) -> None:
+def test_fetch_regions(mock_request: MagicMock, mock_region_data: list) -> None:
     """Тестирует fetch_regions с мокнутым запросом"""
     mock_request.return_value = mock_region_data
 
@@ -70,12 +70,13 @@ def test_fetch_regions(mock_request: MagicMock, mock_region_data: MagicMock) -> 
 
 
 @patch("src.vacancy_api.HHClient._HHClient__make_request")
-def test_fetch_vacancies(mock_request: MagicMock, mock_vacancy_data: MagicMock) -> None:
+def test_fetch_vacancies(mock_request: MagicMock, mock_vacancy_data: dict) -> None:
     """Проверяем, что fetch_vacancies возвращает VacancyList"""
-    mock_request.return_value = {"items": [mock_vacancy_data]}
+    # Mock response должен содержать pages и found
+    mock_request.return_value = {"items": [mock_vacancy_data], "pages": 1, "found": 1}
 
     client = HHClient()
-    result = client.fetch_vacancies("Python", region=1)
+    result = client.fetch_vacancies("Python", company_id=100500, region=1)
 
     assert isinstance(result, VacancyList)
     assert len(result.vacancies) == 1

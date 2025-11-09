@@ -22,7 +22,9 @@ class BaseVacancyAPI(ABC):
     BASE_URL: str
 
     @abstractmethod
-    def fetch_vacancies(self, search_string: str, region: int) -> VacancyList:
+    def fetch_vacancies(
+        self, search_string: str, company_id: int, region: int = 1, per_page: int = 100
+    ) -> VacancyList:
         """Получает список вакансий по поисковой строке и региону."""
         pass
 
@@ -31,40 +33,57 @@ class HHClient(BaseVacancyAPI):
     """Клиент для работы с API HeadHunter."""
 
     BASE_URL = "https://api.hh.ru"
-    __region_names: dict = {}
+    __region_names: dict[str, int] = {}
 
     def __init__(self) -> None:
         """Инициализирует клиент и загружает справочник регионов."""
         if not self.__region_names:
             self.fetch_regions()
 
-    def fetch_vacancies(self, search_string: str, region: int = 1, per_page: int = 100) -> VacancyList:
+    def fetch_vacancies(
+        self, search_string: str, company_id: int, region: int = 1, per_page: int = 100
+    ) -> VacancyList:
         """Получает список вакансий по ключевому слову и региону."""
+        total_data: list[dict[str, Any]] = []
 
-        params = {"text": search_string, "area": region, "per_page": per_page, "search_field": ["name", "description"]}
+        params = {
+            "text": search_string,
+            "area": region,
+            "per_page": per_page,
+            "employer_id": company_id,
+            "search_field": ["name", "description"],
+        }
 
-        response = self.__make_request("/vacancies", params).get("items", [])
+        data = self.__make_request("/vacancies", params)
+        total_pages = data["pages"]
+        total_found = data["found"]
+        logger.debug(f"Всего найдено вакансий: {total_found}. Всего найдено страниц: {total_pages}.")
+        total_data.extend(data["items"])
 
-        logger.debug(f"Ответ от headhunter: {response}")
-        logger.debug(f"HHClient response length: {len(response)}")
+        for page in range(1, total_pages):
+            params["page"] = page
+            data = self.__make_request("/vacancies", params)
+            total_data.extend(data["items"])
+
+        logger.debug(f"Всего получено вакансий: {len(total_data)}")
 
         vacancy_list = VacancyList()
-        # [self.__parse_vacancy(vacancy) for vacancy in response]
-        for item in response:
+
+        for item in total_data:
             vacancy = self.parse_vacancy(item)
             vacancy_list.add(vacancy)
         return vacancy_list
 
     @property
-    def region_names(self) -> dict:
+    def region_names(self) -> dict[str, int]:
         """Геттер справочника регионов."""
         return self.__region_names
 
     @staticmethod
-    def __make_request(endpoint: str, params: dict = {}) -> Any:
+    def __make_request(endpoint: str, params: dict[str, Any] | None = None) -> Any:
         """Выполняет HTTP-запрос к API HeadHunter."""
         url = f"{HHClient.BASE_URL}{endpoint}"
-        response = requests.get(url, params=params)
+        response = requests.get(url, params=params if params is not None else {})
 
         if response.status_code != 200:
             raise Exception(f"API request failed: {response.status_code}, {response.text}")
@@ -76,10 +95,10 @@ class HHClient(BaseVacancyAPI):
         """Парсит данные вакансии из ответа API в объект Vacancy."""
         logger.debug(f"Парсинг вакансии для добавления в VacancyList: {data}")
 
-        vacancy_id = data.get("id")
-        vacancy_url = str(data.get("alternate_url"))
-        title = str(data.get("name"))
-        company_name = str((data.get("employer") or {}).get("name"))
+        vacancy_id = int(data.get("id", 0))
+        vacancy_url = str(data.get("alternate_url", ""))
+        title = str(data.get("name", ""))
+        company_id = int((data.get("employer") or {}).get("id", 0))
         area_name = str((data.get("area") or {}).get("name"))
         salary_from = (data.get("salary") or {}).get("from")
         salary_to = (data.get("salary") or {}).get("to")
@@ -88,7 +107,7 @@ class HHClient(BaseVacancyAPI):
         schedule = str((data.get("schedule") or {}).get("name"))
         description = f"{responsibility} {schedule}."
 
-        vacancy = Vacancy(vacancy_id, vacancy_url, title, description, company_name, area_name, salary_from, salary_to)
+        vacancy = Vacancy(vacancy_id, vacancy_url, title, description, company_id, area_name, salary_from, salary_to)
 
         logger.debug(f"Добавлена Vacancy: {vacancy}")
         return vacancy
@@ -106,9 +125,9 @@ class HHClient(BaseVacancyAPI):
         cls.__region_names = regions
 
     @staticmethod
-    def parse_regions(data: list[dict]) -> dict:
+    def parse_regions(data: list[dict[str, Any]]) -> dict[str, int]:
         """Рекурсивно парсит иерархическую структуру регионов в плоский словарь."""
-        region_names = {}
+        region_names: dict[str, int] = {}
         for item in data:
             region_names[item["name"]] = int(item["id"])
 

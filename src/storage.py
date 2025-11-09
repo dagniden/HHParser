@@ -1,8 +1,12 @@
 import json
 import os
 from abc import ABC, abstractmethod
+from configparser import ConfigParser
+from typing import Any
 
+import psycopg2
 from loguru import logger
+from psycopg2.extras import RealDictCursor
 
 from src.models import Vacancy, VacancyList
 
@@ -148,7 +152,7 @@ class JSONStorage(BaseStorage):
                     vacancy_url=item.get("vacancy_url"),
                     title=item.get("title"),
                     description=item.get("description"),
-                    company_name=item.get("company_name"),
+                    company_id=item.get("company_id"),
                     area_name=item.get("area_name"),
                     salary_from=salary_from,
                     salary_to=salary_to,
@@ -159,3 +163,182 @@ class JSONStorage(BaseStorage):
 
         logger.info(f"Создан VacancyList из {len(vacancies)} вакансий")
         return VacancyList(vacancies)
+
+
+class DBStorage(BaseStorage):
+    """Хранилище данных в PostgreSQL с управлением соединениями"""
+
+    def __init__(self) -> None:
+        """Инициализация параметров подключения к целевой БД"""
+        self.connection_params = self._get_config("database.ini", "postgresql")
+        logger.info("DBStorage инициализирован с параметрами подключения к parser_db")
+
+    @staticmethod
+    def _get_config(filename: str, section: str) -> dict[str, str]:
+        parser = ConfigParser()
+        # Вычисляем путь к файлу относительно этого модуля
+        config_path = os.path.join(os.path.dirname(__file__), filename)
+        parser.read(config_path)
+        db = {}
+        if parser.has_section(section):
+            params = parser.items(section)
+            for param in params:
+                db[param[0]] = param[1]
+        else:
+            raise Exception("Секция параметров подключения к базе данных не найдена")
+        return db
+
+    def _get_connection(self) -> Any:
+        """Создаёт новое соединение к БД"""
+        return psycopg2.connect(**self.connection_params)
+
+    @classmethod
+    def initialize_database(cls) -> None:
+        """
+        Инициализирует БД и таблицы при первом запуске.
+        Вызывается один раз перед использованием DBStorage.
+        """
+        logger.info("Начало инициализации базы данных")
+
+        # Параметры для подключения к служебной БД
+        temp_params = cls._get_config("database.ini", "postgresql_service")
+
+        # Шаг 1: Создание БД parser_db если её нет
+        try:
+            conn = psycopg2.connect(**temp_params)
+            conn.autocommit = True
+            with conn.cursor() as cursor:
+                # Проверка существования БД
+                cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", ("parser_db",))
+                if not cursor.fetchone():
+                    cursor.execute("CREATE DATABASE parser_db")
+                    logger.info("База данных parser_db создана")
+                else:
+                    logger.info("База данных parser_db уже существует")
+        except psycopg2.Error as e:
+            logger.error(f"Ошибка при создании БД: {e}")
+            raise
+
+        # Шаг 2: Создание таблиц в parser_db
+        target_params = {**temp_params, "database": "parser_db"}
+        try:
+            with psycopg2.connect(**target_params) as conn:
+                conn.autocommit = True
+                with conn.cursor() as cursor:
+                    # Проверка существования таблиц
+                    cursor.execute("SELECT 1 FROM information_schema.tables WHERE table_name = 'companies'")
+                    if not cursor.fetchone():
+                        cls._create_tables(cursor)
+                        logger.info("Таблицы созданы и заполнены начальными данными")
+                    else:
+                        logger.info("Таблицы уже существуют")
+        except psycopg2.Error as e:
+            logger.error(f"Ошибка при создании таблиц: {e}")
+            raise
+
+        logger.info("Инициализация базы данных завершена успешно")
+
+    @staticmethod
+    def _create_tables(cursor: Any) -> None:
+        """Создаёт таблицы и заполняет начальными данными"""
+        query = """
+        DROP TABLE IF EXISTS vacancies CASCADE;
+        DROP TABLE IF EXISTS companies CASCADE;
+
+        CREATE TABLE companies
+        (
+            company_id INT PRIMARY KEY,
+            company_name VARCHAR(255) NOT NULL
+        );
+
+        INSERT INTO companies VALUES (1122462, 'Skyeng');
+        INSERT INTO companies VALUES (15478, 'VK');
+        INSERT INTO companies VALUES (11063264, 'Яндекс');
+        INSERT INTO companies VALUES (681672, 'USETECH');
+        INSERT INTO companies VALUES (2180, 'Ozon');
+        INSERT INTO companies VALUES (3529, 'СБЕР');
+        INSERT INTO companies VALUES (4309, 'Ингосстрах');
+        INSERT INTO companies VALUES (5860936, 'Лоция');
+        INSERT INTO companies VALUES (80, 'Альфа-Банк');
+        INSERT INTO companies VALUES (3776, 'МТС');
+
+        CREATE TABLE vacancies
+        (
+            isn SERIAL PRIMARY KEY,
+            hh_id BIGINT UNIQUE NOT NULL,
+            vacancy_url TEXT,
+            title TEXT NOT NULL,
+            description TEXT,
+            company_id INT NOT NULL,
+            area_name VARCHAR(255),
+            salary_from DECIMAL,
+            salary_to DECIMAL,
+            CONSTRAINT fk_vacancies_company_id FOREIGN KEY (company_id)
+                REFERENCES companies(company_id) ON DELETE CASCADE
+        );
+        """
+        cursor.execute(query)
+
+    def execute_query(self, query: str, params: tuple[Any, ...] | dict[str, Any] | None = None) -> int:
+        """
+        Выполняет запрос INSERT/UPDATE/DELETE и возвращает количество затронутых строк.
+
+        Args:
+            query: SQL запрос
+            params: Параметры для запроса (tuple или dict)
+
+        Returns:
+            Количество затронутых строк
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(query, params)
+                    conn.commit()
+                    affected_rows = cursor.rowcount
+                    logger.debug(f"Запрос выполнен, затронуто строк: {affected_rows}")
+                    return int(affected_rows) if affected_rows else 0
+        except psycopg2.IntegrityError as e:
+            logger.warning(f"Нарушено ограничение в базе данных: {e}")
+            return 0
+        except psycopg2.Error as e:
+            logger.error(f"Ошибка выполнения запроса: {e}")
+            raise
+
+    def fetch_query(self, query: str, params: tuple[Any, ...] | dict[str, Any] | None = None) -> list[dict[str, Any]]:
+        """
+        Выполняет SELECT запрос и возвращает результат в виде списка словарей.
+
+        Args:
+            query: SQL запрос SELECT
+            params: Параметры для запроса (tuple или dict)
+
+        Returns:
+            Список словарей с результатами запроса
+        """
+        try:
+            with self._get_connection() as conn:
+                with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+                    cursor.execute(query, params)
+                    result = cursor.fetchall()
+                    logger.debug(f"Запрос выполнен, получено строк: {len(result)}")
+                    return list(result) if result else []
+        except psycopg2.Error as e:
+            logger.error(f"Ошибка выполнения запроса: {e}")
+            raise
+
+    def create(self, vacancy: Vacancy) -> bool:
+        """Метод для создания записи в БД (не используется напрямую)"""
+        return False
+
+    def read(self) -> list[Any]:
+        """Метод для чтения записей из БД (не используется напрямую)"""
+        return []
+
+    def update(self, vacancy: Vacancy) -> bool:
+        """Метод для обновления записи в БД (не используется напрямую)"""
+        return False
+
+    def delete(self, vacancy: Vacancy) -> bool:
+        """Метод для удаления записи из БД (не используется напрямую)"""
+        return False

@@ -119,7 +119,13 @@ def test_show_menu_option_2(monkeypatch: pytest.MonkeyPatch) -> None:
 def test_show_menu_option_3(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr("builtins.input", lambda _: "3")
     result = CLI.show_menu()
-    assert result == "3. Выход"
+    assert result == "3. Показать список компаний в базе и количество вакансий у каждой"
+
+
+def test_show_menu_option_7(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("builtins.input", lambda _: "7")
+    result = CLI.show_menu()
+    assert result == "7. Выход"
 
 
 # ===== ТЕСТ DISPLAY_VACANCIES =====
